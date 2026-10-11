@@ -467,7 +467,42 @@
         async function tryBiometrics() { try { const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge); await navigator.credentials.get({ publicKey: { challenge, timeout: 60000, userVerification: "required" }}); document.getElementById('lockScreen').classList.add('hidden'); } catch(e) { console.log("Биометрия отменена"); } }
         let unlockClicks = 0; let unlockTimer; window.emergencyUnlock = function() { unlockClicks++; clearTimeout(unlockTimer); unlockTimer = setTimeout(() => unlockClicks = 0, 1500); if(unlockClicks >= 5) { localStorage.setItem('authMethod', 'none'); authMethod = 'none'; document.getElementById('lockScreen').classList.add('hidden'); alert("Защита снята!"); } };
 
-        window.exportData = function() { const allData = {}; for (let i = 0; i < localStorage.length; i++) { const key = localStorage.key(i); allData[key] = localStorage.getItem(key); } const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData)); a.download = "vplaner_backup.json"; document.body.appendChild(a); a.click(); a.remove(); closeOverlay(); };
+       window.exportData = async function() {
+            const allData = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                allData[key] = localStorage.getItem(key);
+            }
+            
+            const dateStr = new Date().toLocaleDateString('ru-RU').replace(/\./g, '-');
+            const blob = new Blob([JSON.stringify(allData)], { type: 'application/json' });
+            const file = new File([blob], `vplaner_backup_${dateStr}.json`, { type: 'application/json' });
+
+            const downloadFallback = () => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                closeOverlay();
+            };
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: 'Резервная копия VPlaner',
+                        text: 'Бекап данных',
+                        files: [file]
+                    });
+                    closeOverlay();
+                } catch (e) {
+                    downloadFallback();
+                }
+            } else {
+                downloadFallback();
+            }
+        };
         window.importData = function(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = function(ev) { try { const data = JSON.parse(ev.target.result); for (const key in data) { localStorage.setItem(key, data[key]); } alert("Восстановлено!"); location.reload(); } catch(err) { alert("Ошибка файла!"); } }; r.readAsText(f); closeOverlay(); };
         function shareContent(title, text) { if (navigator.share) { navigator.share({ title: title, text: text }).catch(() => {}); } else { navigator.clipboard.writeText(title + "\n\n" + text).then(() => alert("Скопировано в буфер")); } }
 
