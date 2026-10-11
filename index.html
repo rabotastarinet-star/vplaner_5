@@ -20,8 +20,9 @@
     <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
     
     <style>
-        /* БАЗОВЫЕ СТИЛИ */
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
+        /* БАЗОВЫЕ СТИЛИ И ЗАЩИТА ОТ СЛУЧАЙНОГО ВЫДЕЛЕНИЯ НА ANDROID */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+        input, textarea { -webkit-user-select: auto; user-select: auto; }
         body { background-color: #1a1a2e; background-size: cover; background-position: center; background-attachment: fixed; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; transition: background-image 0.5s ease-in-out; }
         .overlay { background: rgba(0, 0, 0, 0.4); position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
         
@@ -386,6 +387,10 @@
             <div class="modal-header"><h3>Редактировать задачу</h3><button class="close-modal-btn" onclick="closeOverlay()">✕</button></div>
             <textarea id="editTaskText" placeholder="Текст задачи" style="height:80px; width:100%;"></textarea>
             <input type="text" id="editTaskTime" placeholder="Выберите дату и время" readonly style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff; outline:none; margin-bottom:15px;">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom: 20px;">
+                <input type="checkbox" id="editTaskRemind" style="width:20px; height:20px;">
+                <span style="color:#bbb; font-size:14px;">Прислать уведомление</span>
+            </label>
             <div class="modal-actions"><button class="btn-cancel" onclick="closeOverlay()">Отмена</button><button class="btn-save" onclick="saveEditedTask()">Сохранить</button></div>
         </div>
     </div>
@@ -400,9 +405,11 @@
         </div>
     </div>
 
+    <!-- НИЖНЯЯ ПАНЕЛЬ -->
     <div class="bottom-bar" id="bottomBar">
         <div class="input-glass">
             <span class="material-symbols-outlined cal-icon-trigger" id="calTriggerIcon" style="color:#d8b4fe; margin-right:5px; font-size:22px; cursor:pointer;">calendar_today</span>
+            <span class="material-symbols-outlined" id="reminderToggleIcon" style="color:#a855f7; margin-right:5px; font-size:22px; cursor:pointer;" onclick="toggleReminder()">notifications_active</span>
             <input type="text" id="taskTime" placeholder="" readonly style="display:none;">
             <input type="text" id="taskInput" placeholder="Пиши или диктуй задачу...">
             <button class="btn-action mic" id="actionBtn"><span class="material-symbols-outlined" id="actionIcon">mic</span></button>
@@ -467,15 +474,13 @@
         async function tryBiometrics() { try { const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge); await navigator.credentials.get({ publicKey: { challenge, timeout: 60000, userVerification: "required" }}); document.getElementById('lockScreen').classList.add('hidden'); } catch(e) { console.log("Биометрия отменена"); } }
         let unlockClicks = 0; let unlockTimer; window.emergencyUnlock = function() { unlockClicks++; clearTimeout(unlockTimer); unlockTimer = setTimeout(() => unlockClicks = 0, 1500); if(unlockClicks >= 5) { localStorage.setItem('authMethod', 'none'); authMethod = 'none'; document.getElementById('lockScreen').classList.add('hidden'); alert("Защита снята!"); } };
 
-       window.exportData = async function() {
+        window.exportData = async function() {
             const allData = {};
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 allData[key] = localStorage.getItem(key);
             }
-            
             const dateStr = new Date().toLocaleDateString('ru-RU').replace(/\./g, '-');
-            // Маскируем под текстовый файл, чтобы Android пропустил его в Телеграм
             const blob = new Blob([JSON.stringify(allData)], { type: 'text/plain' });
             const file = new File([blob], `vplaner_backup_${dateStr}.txt`, { type: 'text/plain' });
 
@@ -491,31 +496,54 @@
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
-                    await navigator.share({
-                        title: 'Резервная копия VPlaner',
-                        files: [file]
-                    });
+                    await navigator.share({ title: 'Резервная копия VPlaner', files: [file] });
                     closeOverlay();
-                } catch (e) {
-                    downloadFallback();
-                }
-            } else {
-                downloadFallback();
-            }
+                } catch (e) { downloadFallback(); }
+            } else { downloadFallback(); }
         };
         window.importData = function(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = function(ev) { try { const data = JSON.parse(ev.target.result); for (const key in data) { localStorage.setItem(key, data[key]); } alert("Восстановлено!"); location.reload(); } catch(err) { alert("Ошибка файла!"); } }; r.readAsText(f); closeOverlay(); };
         function shareContent(title, text) { if (navigator.share) { navigator.share({ title: title, text: text }).catch(() => {}); } else { navigator.clipboard.writeText(title + "\n\n" + text).then(() => alert("Скопировано в буфер")); } }
 
-        // --- 4. ЗАДАЧИ ---
+        // --- 4. ЗАДАЧИ И УВЕДОМЛЕНИЯ ---
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         const fpConfig = { enableTime: true, dateFormat: "Y-m-d\TH:i", locale: "ru", time_24hr: true, disableMobile: "true" }; const mainDatePicker = flatpickr("#taskTime", fpConfig); const editDatePicker = flatpickr("#editTaskTime", fpConfig);
         document.getElementById('calTriggerIcon').addEventListener('click', () => mainDatePicker.open()); mainDatePicker.config.onChange.push((s, ds) => { document.getElementById('calTriggerIcon').style.color = ds ? '#a855f7' : '#d8b4fe'; });
 
-        function requestNotificationPerm() { if ("Notification" in window) { Notification.requestPermission().then(p => { if(p === "granted") alert("Уведомления включены!"); else alert("Разрешение не получено."); }); } }
-        setInterval(() => { if (Notification.permission !== "granted") return; const now = new Date(); tasks.forEach(t => { if (t.time && !t.notified && !t.done) { const taskTime = new Date(t.time); if (taskTime <= now) { new Notification("VPlaner: Пора!", { body: t.text, icon: 'icon.png' }); if(navigator.vibrate) navigator.vibrate([200, 100, 200]); t.notified = true; saveAndRender(); } } }); }, 30000);
+        function requestNotificationPerm() { 
+            if ("Notification" in window) { 
+                if (Notification.permission === "granted") {
+                    document.querySelector('header .material-symbols-outlined:last-child').style.color = '#34d399';
+                } else {
+                    Notification.requestPermission().then(p => { 
+                        if(p === "granted") document.querySelector('header .material-symbols-outlined:last-child').style.color = '#34d399';
+                    }); 
+                }
+            } 
+        }
 
-       let currentWeekOffset = 0;
+        setInterval(() => { 
+            if (Notification.permission !== "granted") return; 
+            const now = new Date(); 
+            tasks.forEach(t => { 
+                if (t.time && !t.notified && !t.done && t.remind !== false) { 
+                    const taskTime = new Date(t.time); 
+                    if (taskTime <= now) { 
+                        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                            navigator.serviceWorker.ready.then(reg => {
+                                reg.showNotification("VPlaner: Пора!", { body: t.text, icon: 'icon.png', vibrate: [200, 100, 200] });
+                            });
+                        } else {
+                            new Notification("VPlaner: Пора!", { body: t.text, icon: 'icon.png' }); 
+                        }
+                        if(navigator.vibrate) navigator.vibrate([200, 100, 200]); 
+                        t.notified = true; 
+                        saveAndRender(); 
+                    } 
+                } 
+            }); 
+        }, 30000);
 
+        let currentWeekOffset = 0;
         function getWeekBounds() { 
             let curr = new Date(); 
             curr.setDate(curr.getDate() + (currentWeekOffset * 7)); 
@@ -550,8 +578,7 @@
                 headerEl.innerText = `${fmt(bounds.start)} - ${fmt(bounds.end)}`;
             }
 
-            let hasWeek = false; 
-            let hasNoDate = false; 
+            let hasWeek = false; let hasNoDate = false; 
             let sorted = [...tasks].sort((a, b) => { if(!a.time) return 1; if(!b.time) return -1; return new Date(a.time) - new Date(b.time); }); 
             sorted.forEach((task) => { 
                 const origIndex = tasks.indexOf(task); 
@@ -583,35 +610,94 @@
 
         let tStartX = 0, tStartY = 0;
         const tContainer = document.getElementById('view-tasks');
-        tContainer.addEventListener('touchstart', e => {
-            tStartX = e.changedTouches[0].screenX;
-            tStartY = e.changedTouches[0].screenY;
-        }, {passive: true});
+        tContainer.addEventListener('touchstart', e => { tStartX = e.changedTouches[0].screenX; tStartY = e.changedTouches[0].screenY; }, {passive: true});
         tContainer.addEventListener('touchend', e => {
-            let tEndX = e.changedTouches[0].screenX;
-            let tEndY = e.changedTouches[0].screenY;
-            let xDiff = tEndX - tStartX;
-            let yDiff = tEndY - tStartY;
+            let tEndX = e.changedTouches[0].screenX; let tEndY = e.changedTouches[0].screenY;
+            let xDiff = tEndX - tStartX; let yDiff = tEndY - tStartY;
             if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 60) {
-                if (xDiff < 0) changeWeek(1); 
-                else changeWeek(-1); 
+                if (xDiff < 0) changeWeek(1); else changeWeek(-1); 
             }
         }, {passive: true});
-        
 
-        window.toggleTask = function(i) { tasks[i].done = !tasks[i].done; saveAndRender(); }; window.deleteTask = function(i) { tasks.splice(i, 1); saveAndRender(); }; window.shareTask = function(i) { const t = tasks[i]; let det = t.text; if (t.time) det += "\n📅 Время: " + new Date(t.time).toLocaleString('ru-RU'); shareContent('Задача', det); };
+        window.toggleTask = function(i) { tasks[i].done = !tasks[i].done; saveAndRender(); }; 
+        window.deleteTask = function(i) { tasks.splice(i, 1); saveAndRender(); }; 
+        window.shareTask = function(i) { const t = tasks[i]; let det = t.text; if (t.time) det += "\n📅 Время: " + new Date(t.time).toLocaleString('ru-RU'); shareContent('Задача', det); };
         function saveAndRender() { localStorage.setItem('tasks', JSON.stringify(tasks)); if(document.getElementById('view-tasks').classList.contains('active')) renderTasksWeek(); if(document.getElementById('view-calendar').classList.contains('active')) { renderCalendar(); if(selectedDateStr) renderCalendarTasks(selectedDateStr); } }
 
         const taskInput = document.getElementById('taskInput'); const actionBtn = document.getElementById('actionBtn'); const actionIcon = document.getElementById('actionIcon');
-        function addTaskFromInput() { let text = taskInput.value.trim(); if(!text) return; tasks.push({ text: text, time: document.getElementById('taskTime').value, done: false, notified: false }); taskInput.value = ''; mainDatePicker.clear(); document.getElementById('calTriggerIcon').style.color = '#d8b4fe'; updateButtonState(); saveAndRender(); } taskInput.addEventListener('input', updateButtonState); taskInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') addTaskFromInput(); }); function updateButtonState() { if (taskInput.value.trim().length > 0) { actionIcon.innerText = 'send'; actionBtn.classList.remove('mic'); } else { actionIcon.innerText = 'mic'; actionBtn.classList.add('mic'); } }
+        
+        let currentReminderState = true;
+        window.toggleReminder = function() {
+            currentReminderState = !currentReminderState;
+            const icon = document.getElementById('reminderToggleIcon');
+            icon.innerText = currentReminderState ? 'notifications_active' : 'notifications_off';
+            icon.style.color = currentReminderState ? '#a855f7' : '#bbb';
+        };
+
+        function addTaskFromInput() { 
+            let text = taskInput.value.trim(); 
+            if(!text) return; 
+            tasks.push({ text: text, time: document.getElementById('taskTime').value, done: false, notified: false, remind: currentReminderState }); 
+            taskInput.value = ''; mainDatePicker.clear(); document.getElementById('calTriggerIcon').style.color = '#d8b4fe'; 
+            currentReminderState = true; document.getElementById('reminderToggleIcon').innerText = 'notifications_active'; document.getElementById('reminderToggleIcon').style.color = '#a855f7';
+            updateButtonState(); saveAndRender(); 
+        } 
+        
+        taskInput.addEventListener('input', updateButtonState); taskInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') addTaskFromInput(); }); 
+        function updateButtonState() { if (taskInput.value.trim().length > 0) { actionIcon.innerText = 'send'; actionBtn.classList.remove('mic'); } else { actionIcon.innerText = 'mic'; actionBtn.classList.add('mic'); } }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; let recognition = null; if (SpeechRecognition) { recognition = new SpeechRecognition(); recognition.lang = 'ru-RU'; recognition.interimResults = false; recognition.onstart = () => { taskInput.placeholder = "Слушаю..."; actionBtn.style.transform = "scale(1.1)"; }; recognition.onend = () => { taskInput.placeholder = "Пиши или диктуй задачу..."; actionBtn.style.transform = "scale(1)"; }; recognition.onresult = (e) => { taskInput.value += (taskInput.value ? ' ' : '') + e.results[0][0].transcript; updateButtonState(); }; } actionBtn.addEventListener('click', () => { if (taskInput.value.trim().length > 0) { addTaskFromInput(); } else { if (recognition) { try { recognition.start(); } catch(e) {} } else { alert("Голос не поддерживается."); } } });
-        let currentEditIndex = null; window.openEditModal = function(i) { currentEditIndex = i; const t = tasks[i]; document.getElementById('editTaskText').value = t.text; if(t.time) editDatePicker.setDate(t.time); else editDatePicker.clear(); openModalBase('editModal'); }; window.saveEditedTask = function() { if (currentEditIndex !== null) { const nT = document.getElementById('editTaskText').value.trim(); if (nT) { tasks[currentEditIndex].text = nT; tasks[currentEditIndex].time = document.getElementById('editTaskTime').value; tasks[currentEditIndex].notified = false; saveAndRender(); closeOverlay(); } } };
+        
+        let currentEditIndex = null; 
+        window.openEditModal = function(i) { 
+            currentEditIndex = i; const t = tasks[i]; 
+            document.getElementById('editTaskText').value = t.text; 
+            if(t.time) editDatePicker.setDate(t.time); else editDatePicker.clear(); 
+            document.getElementById('editTaskRemind').checked = t.remind !== false;
+            openModalBase('editModal'); 
+        }; 
+        window.saveEditedTask = function() { 
+            if (currentEditIndex !== null) { 
+                const nT = document.getElementById('editTaskText').value.trim(); 
+                if (nT) { 
+                    tasks[currentEditIndex].text = nT; 
+                    tasks[currentEditIndex].time = document.getElementById('editTaskTime').value; 
+                    tasks[currentEditIndex].remind = document.getElementById('editTaskRemind').checked;
+                    tasks[currentEditIndex].notified = false; 
+                    saveAndRender(); closeOverlay(); 
+                } 
+            } 
+        };
 
         // --- 5. КАЛЕНДАРЬ ---
         let calDate = new Date(); let selectedDateStr = null; window.changeMonth = function(dir) { calDate.setMonth(calDate.getMonth() + dir); renderCalendar(); };
         function renderCalendar() { const grid = document.getElementById('calGrid'); grid.innerHTML = ''; const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]; document.getElementById('calMonthYear').innerText = monthNames[calDate.getMonth()] + ' ' + calDate.getFullYear(); ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].forEach(d => grid.innerHTML += `<div class="cal-day-name">${d}</div>`); const y = calDate.getFullYear(); const m = calDate.getMonth(); const startOffset = (new Date(y, m, 1).getDay() || 7) - 1; const daysInMonth = new Date(y, m + 1, 0).getDate(); const taskDates = new Set(); tasks.forEach(t => { if (t.time && !t.done) taskDates.add(t.time.split('T')[0]); }); const today = new Date(); for (let i = 0; i < startOffset; i++) grid.innerHTML += `<div></div>`; for (let i = 1; i <= daysInMonth; i++) { const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`; let cls = 'cal-day' + (today.getFullYear() === y && today.getMonth() === m && today.getDate() === i ? ' today' : '') + (selectedDateStr === dStr ? ' selected' : ''); const dDiv = document.createElement('div'); dDiv.className = cls; dDiv.innerHTML = `${i} ${taskDates.has(dStr) ? '<div class="dot"></div>' : ''}`; dDiv.onclick = () => { selectedDateStr = dStr; renderCalendar(); renderCalendarTasks(dStr); }; grid.appendChild(dDiv); } }
-        function renderCalendarTasks(dStr) { document.getElementById('selectedDateTitle').innerText = 'События на: ' + dStr; const ctList = document.getElementById('calendarTaskList'); ctList.innerHTML = ''; const dTasks = tasks.filter(t => t.time && t.time.split('T')[0] === dStr); if (dTasks.length === 0) { ctList.innerHTML = '<div style="color:#bbb;">Ничего нет.</div>'; return; } dTasks.forEach(t => { ctList.innerHTML += `<div class="task-card ${t.done?'done':''}"><div class="checkbox ${t.done?'checked':''}" onclick="toggleTask(${tasks.indexOf(t)})"></div><div class="task-info"><div class="task-title">${t.text}</div></div></div>`; }); }
+        
+        function renderCalendarTasks(dStr) { 
+            document.getElementById('selectedDateTitle').innerText = 'События на: ' + dStr; 
+            const ctList = document.getElementById('calendarTaskList'); 
+            ctList.innerHTML = ''; 
+            const dTasks = tasks.filter(t => t.time && t.time.split('T')[0] === dStr); 
+            if (dTasks.length === 0) { ctList.innerHTML = '<div style="color:#bbb;">Ничего нет.</div>'; return; } 
+            
+            dTasks.forEach(t => { 
+                const origIndex = tasks.indexOf(t);
+                let tStr = new Date(t.time).toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+                ctList.innerHTML += `
+                <div class="task-card ${t.done?'done':''}">
+                    <div class="checkbox ${t.done?'checked':''}" onclick="toggleTask(${origIndex})"></div>
+                    <div class="task-info">
+                        <div class="task-title">${t.text}</div>
+                        <div class="task-time">${tStr}</div>
+                    </div>
+                    <div class="task-actions">
+                        <span class="material-symbols-outlined share-icon" onclick="shareTask(${origIndex})">share</span>
+                        <span class="material-symbols-outlined edit-icon" onclick="openEditModal(${origIndex})">edit</span>
+                        <span class="material-symbols-outlined del-icon" onclick="deleteTask(${origIndex})">delete</span>
+                    </div>
+                </div>`; 
+            }); 
+        }
 
         // --- 6. БЛОКНОТ ---
         let notesList = JSON.parse(localStorage.getItem('notesList')) || []; function renderNotes() { const grid = document.getElementById('notesGrid'); grid.innerHTML = ''; if (notesList.length === 0) { grid.innerHTML = '<div style="color:#ccc; grid-column: 1 / -1; text-align:center; padding: 20px;">Нет заметок.</div>'; return; } notesList.forEach(note => { grid.innerHTML += `<div class="note-widget" onclick="openNoteModal(${note.id})">${note.title ? `<h4>${note.title}</h4>` : ''}<p>${note.content}</p><div class="note-actions"><span class="material-symbols-outlined share-note" onclick="event.stopPropagation(); shareNote(${note.id})">share</span><span class="material-symbols-outlined del-note" onclick="event.stopPropagation(); deleteNote(${note.id})">delete</span></div></div>`; }); } let currentNoteId = null; window.openNoteModal = function(id = null) { currentNoteId = id; if (id !== null) { const note = notesList.find(n => n.id === id); document.getElementById('noteTitleInput').value = note.title; document.getElementById('noteContentInput').value = note.content; document.getElementById('noteModalTitle').innerText = 'Редактировать заметку'; } else { document.getElementById('noteTitleInput').value = ''; document.getElementById('noteContentInput').value = ''; document.getElementById('noteModalTitle').innerText = 'Новая заметка'; } openModalBase('noteModal'); }; window.saveNote = function() { const title = document.getElementById('noteTitleInput').value.trim(); const content = document.getElementById('noteContentInput').value.trim(); if (!content && !title) return closeOverlay(); if (currentNoteId !== null) { const note = notesList.find(n => n.id === currentNoteId); note.title = title; note.content = content; } else { notesList.push({ id: Date.now(), title: title, content: content }); } localStorage.setItem('notesList', JSON.stringify(notesList)); renderNotes(); closeOverlay(); }; window.deleteNote = function(id) { notesList = notesList.filter(n => n.id !== id); localStorage.setItem('notesList', JSON.stringify(notesList)); renderNotes(); }; window.shareNote = function(id) { const note = notesList.find(n => n.id === id); if (note) shareContent(note.title || 'Заметка', note.content); };
@@ -635,7 +721,6 @@
             if (!window.location.hash) { history.replaceState(null, null, '#tasks'); handleNavigation(); } else { handleNavigation(); }
         });
 
-        // Регистрация Service Worker для работы без интернета
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
