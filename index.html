@@ -514,8 +514,90 @@
         function requestNotificationPerm() { if ("Notification" in window) { Notification.requestPermission().then(p => { if(p === "granted") alert("Уведомления включены!"); else alert("Разрешение не получено."); }); } }
         setInterval(() => { if (Notification.permission !== "granted") return; const now = new Date(); tasks.forEach(t => { if (t.time && !t.notified && !t.done) { const taskTime = new Date(t.time); if (taskTime <= now) { new Notification("VPlaner: Пора!", { body: t.text, icon: 'icon.png' }); if(navigator.vibrate) navigator.vibrate([200, 100, 200]); t.notified = true; saveAndRender(); } } }); }, 30000);
 
-        function getWeekBounds() { let curr = new Date(); let first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1); let start = new Date(curr.setDate(first)); start.setHours(0,0,0,0); let end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999); return {start, end}; }
-        function renderTasksWeek() { const containerWeek = document.getElementById('tasksCurrentWeek'); containerWeek.innerHTML = ''; const containerNoDate = document.getElementById('tasksNoDate'); containerNoDate.innerHTML = ''; const bounds = getWeekBounds(); const now = new Date(); let hasWeek = false; let hasNoDate = false; let sorted = [...tasks].sort((a, b) => { if(!a.time) return 1; if(!b.time) return -1; return new Date(a.time) - new Date(b.time); }); sorted.forEach((task) => { const origIndex = tasks.indexOf(task); let html = ''; if(task.time) { let d = new Date(task.time); if(d >= bounds.start && d <= bounds.end) { hasWeek = true; let tStr = d.toLocaleDateString('ru-RU', {weekday: 'short', day: 'numeric'}) + ' ' + d.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'}); let statusClass = ''; if (!task.done) { if (d < now) statusClass = 'overdue'; else if ((d - now) < 12*60*60*1000) statusClass = 'soon'; } html = `<div class="task-card ${statusClass} ${task.done ? 'done' : ''}"><div class="checkbox ${task.done ? 'checked' : ''}" onclick="toggleTask(${origIndex})"></div><div class="task-info"><div class="task-title">${task.text}</div><div class="task-time">${tStr}</div></div><div class="task-actions"><span class="material-symbols-outlined share-icon" onclick="shareTask(${origIndex})">share</span><span class="material-symbols-outlined edit-icon" onclick="openEditModal(${origIndex})">edit</span><span class="material-symbols-outlined del-icon" onclick="deleteTask(${origIndex})">delete</span></div></div>`; containerWeek.innerHTML += html; } } else { hasNoDate = true; html = `<div class="task-card ${task.done ? 'done' : ''}"><div class="checkbox ${task.done ? 'checked' : ''}" onclick="toggleTask(${origIndex})"></div><div class="task-info"><div class="task-title">${task.text}</div></div><div class="task-actions"><span class="material-symbols-outlined share-icon" onclick="shareTask(${origIndex})">share</span><span class="material-symbols-outlined edit-icon" onclick="openEditModal(${origIndex})">edit</span><span class="material-symbols-outlined del-icon" onclick="deleteTask(${origIndex})">delete</span></div></div>`; containerNoDate.innerHTML += html; } }); if(!hasWeek) containerWeek.innerHTML = '<div style="color:#bbb; text-align:center;">На этой неделе пусто. Отдыхаем!</div>'; if(hasNoDate) containerNoDate.innerHTML = '<div class="task-section-title">Без привязки ко времени</div>' + containerNoDate.innerHTML; }
+       let currentWeekOffset = 0;
+
+        function getWeekBounds() { 
+            let curr = new Date(); 
+            curr.setDate(curr.getDate() + (currentWeekOffset * 7)); 
+            let first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1); 
+            let start = new Date(curr.setDate(first)); 
+            start.setHours(0,0,0,0); 
+            let end = new Date(start); 
+            end.setDate(start.getDate() + 6); 
+            end.setHours(23,59,59,999); 
+            return {start, end}; 
+        }
+
+        function changeWeek(dir) {
+            currentWeekOffset += dir;
+            renderTasksWeek();
+        }
+
+        function renderTasksWeek() { 
+            const containerWeek = document.getElementById('tasksCurrentWeek'); 
+            containerWeek.innerHTML = ''; 
+            const containerNoDate = document.getElementById('tasksNoDate'); 
+            containerNoDate.innerHTML = ''; 
+            const bounds = getWeekBounds(); 
+            const now = new Date(); 
+            
+            let headerEl = document.getElementById('headerTitle');
+            if (currentWeekOffset === 0) headerEl.innerText = "Задачи на неделю";
+            else if (currentWeekOffset === 1) headerEl.innerText = "Следующая неделя";
+            else if (currentWeekOffset === -1) headerEl.innerText = "Прошлая неделя";
+            else {
+                let fmt = (d) => d.toLocaleDateString('ru-RU', {day: 'numeric', month: 'short'});
+                headerEl.innerText = `${fmt(bounds.start)} - ${fmt(bounds.end)}`;
+            }
+
+            let hasWeek = false; 
+            let hasNoDate = false; 
+            let sorted = [...tasks].sort((a, b) => { if(!a.time) return 1; if(!b.time) return -1; return new Date(a.time) - new Date(b.time); }); 
+            sorted.forEach((task) => { 
+                const origIndex = tasks.indexOf(task); 
+                let html = ''; 
+                if(task.time) { 
+                    let d = new Date(task.time); 
+                    if(d >= bounds.start && d <= bounds.end) { 
+                        hasWeek = true; 
+                        let tStr = d.toLocaleDateString('ru-RU', {weekday: 'short', day: 'numeric'}) + ' ' + d.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'}); 
+                        let statusClass = ''; 
+                        if (!task.done) { 
+                            if (d < now) statusClass = 'overdue'; 
+                            else if ((d - now) < 12*60*60*1000) statusClass = 'soon'; 
+                        } 
+                        html = `<div class="task-card ${statusClass} ${task.done ? 'done' : ''}"><div class="checkbox ${task.done ? 'checked' : ''}" onclick="toggleTask(${origIndex})"></div><div class="task-info"><div class="task-title">${task.text}</div><div class="task-time">${tStr}</div></div><div class="task-actions"><span class="material-symbols-outlined share-icon" onclick="shareTask(${origIndex})">share</span><span class="material-symbols-outlined edit-icon" onclick="openEditModal(${origIndex})">edit</span><span class="material-symbols-outlined del-icon" onclick="deleteTask(${origIndex})">delete</span></div></div>`; 
+                        containerWeek.innerHTML += html; 
+                    } 
+                } else { 
+                    if (currentWeekOffset === 0) {
+                        hasNoDate = true; 
+                        html = `<div class="task-card ${task.done ? 'done' : ''}"><div class="checkbox ${task.done ? 'checked' : ''}" onclick="toggleTask(${origIndex})"></div><div class="task-info"><div class="task-title">${task.text}</div></div><div class="task-actions"><span class="material-symbols-outlined share-icon" onclick="shareTask(${origIndex})">share</span><span class="material-symbols-outlined edit-icon" onclick="openEditModal(${origIndex})">edit</span><span class="material-symbols-outlined del-icon" onclick="deleteTask(${origIndex})">delete</span></div></div>`; 
+                        containerNoDate.innerHTML += html; 
+                    }
+                } 
+            }); 
+            if(!hasWeek) containerWeek.innerHTML = '<div style="color:#bbb; text-align:center;">Пусто. Отдыхаем!</div>'; 
+            if(hasNoDate) containerNoDate.innerHTML = '<div class="task-section-title">Без привязки ко времени</div>' + containerNoDate.innerHTML; 
+        }
+
+        let tStartX = 0, tStartY = 0;
+        const tContainer = document.getElementById('view-tasks');
+        tContainer.addEventListener('touchstart', e => {
+            tStartX = e.changedTouches[0].screenX;
+            tStartY = e.changedTouches[0].screenY;
+        }, {passive: true});
+        tContainer.addEventListener('touchend', e => {
+            let tEndX = e.changedTouches[0].screenX;
+            let tEndY = e.changedTouches[0].screenY;
+            let xDiff = tEndX - tStartX;
+            let yDiff = tEndY - tStartY;
+            if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 60) {
+                if (xDiff < 0) changeWeek(1); 
+                else changeWeek(-1); 
+            }
+        }, {passive: true});
+        
 
         window.toggleTask = function(i) { tasks[i].done = !tasks[i].done; saveAndRender(); }; window.deleteTask = function(i) { tasks.splice(i, 1); saveAndRender(); }; window.shareTask = function(i) { const t = tasks[i]; let det = t.text; if (t.time) det += "\n📅 Время: " + new Date(t.time).toLocaleString('ru-RU'); shareContent('Задача', det); };
         function saveAndRender() { localStorage.setItem('tasks', JSON.stringify(tasks)); if(document.getElementById('view-tasks').classList.contains('active')) renderTasksWeek(); if(document.getElementById('view-calendar').classList.contains('active')) { renderCalendar(); if(selectedDateStr) renderCalendarTasks(selectedDateStr); } }
