@@ -475,8 +475,9 @@
             }
             
             const dateStr = new Date().toLocaleDateString('ru-RU').replace(/\./g, '-');
-            const blob = new Blob([JSON.stringify(allData)], { type: 'application/json' });
-            const file = new File([blob], `vplaner_backup_${dateStr}.json`, { type: 'application/json' });
+            // Маскируем под текстовый файл, чтобы Android пропустил его в Телеграм
+            const blob = new Blob([JSON.stringify(allData)], { type: 'text/plain' });
+            const file = new File([blob], `vplaner_backup_${dateStr}.txt`, { type: 'text/plain' });
 
             const downloadFallback = () => {
                 const a = document.createElement('a');
@@ -492,7 +493,6 @@
                 try {
                     await navigator.share({
                         title: 'Резервная копия VPlaner',
-                        text: 'Бекап данных',
                         files: [file]
                     });
                     closeOverlay();
