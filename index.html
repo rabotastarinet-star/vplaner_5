@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>VPlaner</title>
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    
+    <style>
+        /* БАЗОВЫЕ СТИЛИ */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #1a1a2e; background-size: cover; background-position: center; background-attachment: fixed; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; transition: background-image 0.5s ease-in-out; }
+        .overlay { background: rgba(0, 0, 0, 0.4); position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        
+        /* БЛОКИРОВКА */
+        #lockScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a2e; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(20px); transition: opacity 0.3s; }
+        #lockScreen.hidden { opacity: 0; pointer-events: none; }
+        .pin-dots { display: flex; gap: 15px; margin-bottom: 30px; }
+        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #a855f7; transition: 0.2s; }
+        .pin-dot.filled { background: #a855f7; }
+        .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 280px; width: 100%; }
+        .pin-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; margin: 0 auto; transition: transform 0.1s, background 0.1s; }
+        .pin-btn:active { transform: scale(0.9); background: rgba(168, 85, 247, 0.3); }
+        .fingerprint-btn-large { background: rgba(168, 85, 247, 0.1); border: 2px solid #a855f7; color: #a855f7; width: 90px; height: 90px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(168, 85, 247, 0.3); transition: transform 0.1s; }
+        .fingerprint-btn-large:active { transform: scale(0.9); }
+
+        /* HEADER И МЕНЮ */
+        header { padding: 20px; display: flex; align-items: center; background: rgba(25, 20, 40, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: relative; z-index: 10; }
+        header h1 { font-size: 22px; margin-left: 15px; font-weight: 500; flex: 1; }
+        .menu-btn { cursor: pointer; padding: 5px; z-index: 1010; transition: transform 0.2s; }
+        .menu-btn:active { transform: scale(0.9); }
+        
+        .side-menu { position: fixed; left: -280px; top: 0; width: 280px; height: 100%; background: rgba(20, 15, 35, 0.95); backdrop-filter: blur(20px); transition: 0.3s ease-in-out; z-index: 1000; padding: 20px; box-shadow: 2px 0 15px rgba(0,0,0,0.7); border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; overflow-y: auto; }
+        .side-menu.open { left: 0; }
+        .side-menu h2 { font-size: 20px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+        .side-menu ul { list-style: none; flex: 1; }
+        .side-menu ul li { padding: 15px 0; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor:pointer; display: flex; align-items: center; gap: 10px; transition: color 0.2s; }
+        .side-menu ul li:active { color: #a855f7; }
+        .menu-bottom-actions { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
+        .menu-bottom-actions li { font-size: 14px; padding: 12px 0; border: none; opacity: 0.8; }
+        .menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 990; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .menu-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; display: none; position: relative; z-index: 5; }
+        .content.active { display: block; }
+
+        /* ЗАДАЧИ */
+        .task-section-title { font-size: 14px; color: #a855f7; text-transform: uppercase; font-weight: bold; margin: 15px 0 10px 5px; border-bottom: 1px solid rgba(168, 85, 247, 0.3); padding-bottom: 5px; }
+        .task-card { background: rgba(30, 25, 50, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.15s ease, border-color 0.3s; }
+        .task-card:active { transform: scale(0.97); }
+        .task-card.overdue { border-left: 4px solid #f87171; }
+        .task-card.soon { border-left: 4px solid #facc15; }
+        .task-card.done { opacity: 0.5; }
+        .task-card.done .task-title { text-decoration: line-through; }
+        .task-info { flex: 1; margin-left: 15px; padding-right: 5px; }
+        .task-title { font-size: 16px; margin-bottom: 5px; line-height: 1.4; word-break: break-word; }
+        .task-time { font-size: 13px; color: #d8b4fe; font-weight: 500; }
+        .task-actions { display: flex; gap: 8px; }
+        .task-actions span { cursor: pointer; padding: 5px; opacity: 0.8; transition: transform 0.1s; font-size: 22px; }
+        .task-actions span:active { transform: scale(0.85); opacity: 1; }
+        .task-actions .share-icon { color: #34d399; } .task-actions .edit-icon { color: #60a5fa; } .task-actions .del-icon { color: #f87171; }
+        .checkbox { width: 26px; height: 26px; border: 2px solid #a855f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+        .checkbox.checked { background: #a855f7; }
+        .checkbox.checked::after { content: '✔'; color: white; font-size: 14px; }
+
+        /* КАЛЕНДАРЬ */
+        .calendar-wrap { background: rgba(30, 25, 50, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 15px; margin-bottom: 20px; }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .cal-header button { background: none; border: none; color: #fff; cursor: pointer; font-size: 24px; padding: 5px; transition: 0.2s; }
+        .cal-header button:active { transform: scale(0.8); }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .cal-day-name { font-size: 12px; color: #bbb; margin-bottom: 5px; }
+        .cal-day { padding: 10px 0; border-radius: 50%; font-size: 14px; position: relative; cursor: pointer; transition: 0.1s; }
+        .cal-day:active { background: rgba(168, 85, 247, 0.3); }
+        .cal-day.today { background: #a855f7; color: #fff; font-weight: bold; }
+        .cal-day.selected { border: 2px solid #a855f7; }
+        .cal-day .dot { width: 6px; height: 6px; background: #fca5a5; border-radius: 50%; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); }
+
+        /* ФИНАНСЫ */
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .dash-card { background: rgba(30, 25, 50, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.15s; cursor: pointer; min-height: 100px; }
+        .dash-card:active { transform: scale(0.95); border-color: #a855f7; }
+        .dash-card.full-width { grid-column: 1 / -1; background: rgba(168, 85, 247, 0.15); border-color: #a855f7; cursor: default; }
+        .dash-card.full-width:active { transform: none; }
+        .dash-title { font-size: 13px; color: #bbb; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .dash-sum { font-size: 20px; color: #fff; font-weight: bold; }
+        .dash-sub { font-size: 12px; color: #d8b4fe; margin-top: 5px; }
+        .dynamic-row { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+        .dynamic-row-header { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+        .dynamic-row-header input { padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); color: #fff; outline: none; font-size: 14px; }
+        .dynamic-row-header input[type="date"] { flex: 1; color: #d8b4fe; min-width: 0; }
+        .dynamic-row-header input[type="number"] { width: 80px; text-align: right; }
+        .dynamic-row textarea { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); color: #fff; outline: none; font-size: 14px; resize: none; overflow: hidden; min-height: 38px; line-height: 1.4; }
+        .btn-mini-add { width: 100%; background: #a855f7; border: none; color: #fff; padding: 12px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: bold; transition: transform 0.15s; margin-top: 10px; }
+        .btn-mini-add:active { transform: scale(0.97); }
+        .btn-mini-del { background: rgba(248, 113, 113, 0.2); border: 1px solid #f87171; color: #f87171; padding: 8px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+        .btn-mini-del:active { transform: scale(0.9); }
+        .btn-export-finance { width: 100%; background: #34d399; color: #000; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(52, 211, 153, 0.4); transition: transform 0.15s; }
+        .btn-export-finance:active { transform: scale(0.97); }
+
+        /* БОРТЖУРНАЛ АВТО */
+        .auto-input-card { background: rgba(30, 25, 50, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 15px; margin-bottom: 20px; transition: 0.2s; }
+        .auto-input-card input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; outline: none; }
+        .btn-add-auto { width: 100%; background: #a855f7; border: none; padding: 12px; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; margin-top: 5px; transition: 0.15s; }
+        .btn-add-auto:active { transform: scale(0.97); }
+        .auto-log-item { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 4px solid #a855f7; display: flex; justify-content: space-between; align-items: center;}
+        .auto-log-info { flex: 1; }
+        .auto-log-info p { margin-bottom: 5px; font-size: 15px; }
+        .auto-log-info span { color: #bbb; font-size: 13px; display: block; margin-bottom: 3px; }
+        .maintenance-bar { width: 100%; background: rgba(0,0,0,0.5); height: 6px; border-radius: 3px; margin-top: 5px; overflow: hidden; }
+        .maintenance-fill { height: 100%; background: #34d399; transition: width 0.5s ease, background 0.5s; }
+        .service-chk { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 14px; color: #d8b4fe; }
+
+        /* СТАТИСТИКА */
+        .stats-wrap { display: flex; align-items: flex-end; justify-content: space-around; height: 250px; margin-top: 20px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+        .stat-bar-container { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 45px; }
+        .stat-bar { width: 100%; background: linear-gradient(to top, #7e22ce, #a855f7); border-radius: 6px 6px 0 0; transition: height 0.5s ease; min-height: 5px; box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
+        .stat-val { font-size: 11px; margin-bottom: 5px; color: #d8b4fe; font-weight: bold; transform: rotate(-45deg); margin-bottom: 15px;}
+        .stat-month { font-size: 12px; margin-top: 5px; color: #bbb; }
+
+        /* БЛОКНОТ */
+        .notes-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .notes-header button { background: #a855f7; border: none; color: #fff; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.4); transition: 0.15s; }
+        .notes-header button:active { transform: scale(0.9); }
+        .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .note-widget { background: rgba(30, 25, 50, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 15px; padding-bottom: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; position: relative; min-height: 120px; display: flex; flex-direction: column; transition: 0.15s; }
+        .note-widget:active { transform: scale(0.97); }
+        .note-widget h4 { font-size: 15px; margin-bottom: 8px; color: #d8b4fe; font-weight: 500; word-break: break-word; }
+        .note-widget p { font-size: 14px; opacity: 0.9; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; word-break: break-word; }
+        .note-actions { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 10px; }
+        .note-actions span { font-size: 20px; opacity: 0.7; cursor: pointer; transition: 0.1s; }
+        .note-actions span:active { transform: scale(0.85); }
+        .note-actions .share-note { color: #34d399; } .note-actions .del-note { color: #f87171; }
+
+        /* ФОНЫ */
+        .custom-bg-section { margin-bottom: 20px; }
+        .custom-bg-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(30, 25, 50, 0.65); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; backdrop-filter: blur(10px); color: #d8b4fe; font-weight: 500; width: 100%; justify-content: center; transition: 0.15s; }
+        .custom-bg-btn:active { transform: scale(0.97); }
+        .bg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .bg-item { height: 120px; border-radius: 12px; background-size: cover; background-position: center; cursor: pointer; border: 3px solid transparent; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+        .bg-item.active { border-color: #a855f7; transform: scale(1.05); }
+
+        /* МОДАЛЬНЫЕ ОКНА */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { background: rgba(30, 25, 50, 0.95); padding: 20px; border-radius: 20px; width: 92%; max-width: 400px; max-height: 85vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .modal-header h3 { font-size: 18px; font-weight: 500; }
+        .close-modal-btn { background: none; border: none; color: #bbb; font-size: 24px; cursor: pointer; padding: 5px; transition: 0.1s; }
+        .close-modal-btn:active { transform: scale(0.8); }
+        .form-row { margin-bottom: 15px; }
+        .form-row label { display: block; font-size: 13px; color: #bbb; margin-bottom: 5px; }
+        .form-row input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; outline: none; font-size: 16px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
+        .modal-actions button { padding: 10px 18px; border-radius: 8px; border: none; font-size: 15px; cursor: pointer; font-weight: 500; transition: 0.1s; }
+        .modal-actions button:active { transform: scale(0.95); }
+        .btn-cancel { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-save { background: #a855f7; color: #fff; }
+        .modal-content textarea { width: 100%; padding: 12px; border-radius: 10px; border: none; background: rgba(0,0,0,0.3); color: #fff; font-size: 16px; margin-bottom: 15px; resize: none; outline: none; height: 120px; }
+
+        /* НИЖНЯЯ ПАНЕЛЬ */
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; padding: 15px 20px 25px 20px; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent); z-index: 500; }
+        .input-glass { background: rgba(20, 15, 35, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; padding: 6px 6px 6px 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .input-glass input[type="text"] { flex: 1; background: transparent; border: none; color: #fff; font-size: 16px; padding: 12px 10px; outline: none; }
+        .input-glass input[type="text"]::placeholder { color: #bbb; }
+        .btn-action { background: #a855f7; border: none; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; transition: transform 0.1s; flex-shrink: 0; }
+        .btn-action.mic { background: #7e22ce; }
+        .btn-action:active { transform: scale(0.9); }
+    </style>
+</head>
+<body>
+    <!-- ЭКРАН БЛОКИРОВКИ -->
+    <div id="lockScreen" class="hidden">
+        <h2 style="margin-bottom: 30px; font-weight: 400;" id="lockTitle">Введите ПИН-код</h2>
+        <div class="pin-dots" id="pinDots"><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div></div>
+        <div class="pin-pad" id="pinPad">
+            <div class="pin-btn" onclick="enterPin(1)">1</div><div class="pin-btn" onclick="enterPin(2)">2</div><div class="pin-btn" onclick="enterPin(3)">3</div>
+            <div class="pin-btn" onclick="enterPin(4)">4</div><div class="pin-btn" onclick="enterPin(5)">5</div><div class="pin-btn" onclick="enterPin(6)">6</div>
+            <div class="pin-btn" onclick="enterPin(7)">7</div><div class="pin-btn" onclick="enterPin(8)">8</div><div class="pin-btn" onclick="enterPin(9)">9</div>
+            <div class="pin-btn" onclick="clearPin()"><span class="material-symbols-outlined">backspace</span></div>
+            <div class="pin-btn" onclick="enterPin(0)">0</div>
+            <div class="pin-btn" id="bioBtnFallback" onclick="tryBiometrics()"><span class="material-symbols-outlined">fingerprint</span></div>
+        </div>
+        <div id="fingerprintOnly" style="display:none; text-align:center;">
+            <div class="fingerprint-btn-large" onclick="tryBiometrics()"><span class="material-symbols-outlined" style="font-size: 44px;">fingerprint</span></div>
+            <p style="color: #bbb;">Нажмите для разблокировки</p>
+        </div>
+        <p style="color: #666; margin-top: 30px; font-size: 13px; cursor: pointer;" onclick="emergencyUnlock()">Забыли? Аварийный сброс (5 нажатий)</p>
+    </div>
+
+    <div class="overlay"></div>
+    <div class="menu-overlay" id="menuOverlay" onclick="closeOverlay()"></div>
+    
+    <!-- БОКОВОЕ МЕНЮ -->
+    <div class="side-menu" id="sideMenu">
+        <h2>Меню</h2>
+        <ul>
+            <li onclick="switchView('tasks')"><span class="material-symbols-outlined">checklist</span> Задачи (Неделя)</li>
+            <li onclick="switchView('calendar')"><span class="material-symbols-outlined">calendar_month</span> Календарь</li>
+            <li onclick="switchView('finance')"><span class="material-symbols-outlined">account_balance_wallet</span> Финансы</li>
+            <li onclick="switchView('stats')"><span class="material-symbols-outlined">bar_chart</span> Статистика Дохода</li>
+            <li onclick="switchView('auto')"><span class="material-symbols-outlined">directions_car</span> Бортжурнал Авто</li>
+            <li onclick="switchView('notes')"><span class="material-symbols-outlined">edit_note</span> Блокнот</li>
+            <li onclick="switchView('backgrounds')"><span class="material-symbols-outlined">wallpaper</span> Фоны</li>
+            <li onclick="switchView('settings')" style="color: #a855f7; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px;">
+                <span class="material-symbols-outlined">security</span> Настройки защиты
+            </li>
+        </ul>
+        <ul class="menu-bottom-actions">
+            <li onclick="exportData()"><span class="material-symbols-outlined">download</span> Экспорт (Резервная копия)</li>
+            <li onclick="document.getElementById('importInput').click()"><span class="material-symbols-outlined">upload</span> Импорт данных</li>
+        </ul>
+        <input type="file" id="importInput" accept="*/*" style="display: none;" onchange="importData(event)">
+    </div>
+    
+    <header>
+        <span class="material-symbols-outlined menu-btn" id="menuBtn" style="font-size: 28px;">menu</span>
+        <h1 id="headerTitle">Задачи на неделю</h1>
+        <span class="material-symbols-outlined" style="cursor:pointer; opacity:0.8;" onclick="requestNotificationPerm()">notifications</span>
+    </header>
+
+    <!-- ВКЛАДКА: ЗАДАЧИ -->
+    <div class="content" id="view-tasks">
+        <div id="tasksCurrentWeek"></div>
+        <div id="tasksNoDate" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- ВКЛАДКА: КАЛЕНДАРЬ -->
+    <div class="content" id="view-calendar">
+        <div class="calendar-wrap">
+            <div class="cal-header">
+                <button onclick="changeMonth(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
+                <h3 id="calMonthYear"></h3>
+                <button onclick="changeMonth(1)"><span class="material-symbols-outlined">chevron_right</span></button>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+        </div>
+        <h3 style="margin-bottom:10px;" id="selectedDateTitle">События на день</h3>
+        <div id="calendarTaskList"></div>
+    </div>
+
+    <!-- ВКЛАДКА: СТАТИСТИКА ДОХОДА -->
+    <div class="content" id="view-stats">
+        <div class="auto-input-card" style="border-color: #a855f7;">
+            <h3 style="margin-bottom: 5px;">Твой доход за 6 месяцев</h3>
+            <p style="color: #bbb; font-size: 13px; margin-bottom: 10px;">Включает: оклад, переработки, авто и премии</p>
+            <div class="stats-wrap" id="statsContainer"></div>
+        </div>
+    </div>
+
+    <!-- ВКЛАДКА: БОРТЖУРНАЛ АВТО -->
+    <div class="content" id="view-auto">
+        <div class="auto-input-card" style="border-color: #a855f7;">
+            <h3 style="margin-bottom: 15px;">🚗 Состояние и ТО</h3>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;"><span style="font-size: 15px;">Общий пробег (ODO):</span><input type="number" id="globalOdo" placeholder="000000" onchange="updateGlobalOdo()" style="width: 100px; margin: 0; text-align: right;"></div>
+            <div id="maintenanceAlerts"></div>
+        </div>
+        <div class="auto-input-card">
+            <h3 style="margin-bottom: 15px;">⛽ Заправка</h3>
+            <input type="date" id="gasDate"><input type="number" id="gasTrip" placeholder="Пройдено (км)" oninput="calcGas()">
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;"><input type="number" id="gasLiters" placeholder="Газ (л)" oninput="calcGas()" style="margin-bottom: 0;"><input type="number" id="petrolLiters" placeholder="Бенз (л)" oninput="calcGas()" style="margin-bottom: 0;"></div>
+            <input type="number" id="gasSum" placeholder="Сумма (грн)" oninput="calcGas()">
+            <div id="fuelCalcResult" style="margin-bottom: 15px; color: #34d399; font-size: 14px; font-weight: 500; min-height: 20px;"></div>
+            <button class="btn-add-auto" style="background: #34d399; color: #000;" onclick="addGasLog()">+ Сохранить</button>
+        </div>
+        <div class="auto-input-card">
+            <h3 style="margin-bottom: 15px;">🛠 Обслуживание</h3>
+            <input type="date" id="serviceDate"><input type="number" id="serviceOdo" placeholder="Пробег (км)"><input type="text" id="serviceDesc" placeholder="Что делали?"><input type="number" id="serviceSum" placeholder="Сумма (грн)">
+            <div style="margin-top: 15px; margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;">
+                <label class="service-chk"><input type="checkbox" id="chkOil"> Замена масла (сброс 10к)</label>
+                <label class="service-chk"><input type="checkbox" id="chkGbo"> Фильтры ГБО (сброс 10к)</label>
+                <label class="service-chk" style="margin-bottom: 0;"><input type="checkbox" id="chkGrm"> ГРМ (сброс 60к)</label>
+            </div>
+            <button class="btn-add-auto" style="background: #60a5fa;" onclick="addServiceLog()">+ Сохранить ТО</button>
+        </div>
+        <h3 style="margin-bottom: 10px;">История обслуживания</h3>
+        <div id="autoLogsContainer"></div>
+    </div>
+
+    <!-- ВКЛАДКА: ДАШБОРД ФИНАНСЫ -->
+    <div class="content" id="view-finance">
+        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <select id="financeMonthSelect" onchange="loadFinanceData()" style="background: rgba(30, 25, 50, 0.65); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 10px; outline: none;"></select>
+            <span style="color:#bbb; font-size:13px;">Панель управления</span>
+        </div>
+        <div class="dash-card full-width" style="margin-bottom: 20px; text-align: center;">
+            <div class="dash-title" style="color: #d8b4fe;">Итого Финансы (без доп. работ)</div>
+            <div class="dash-sum" id="dashTotal" style="font-size: 28px;">0 грн</div>
+        </div>
+        <button class="btn-export-finance" onclick="shareFinanceReport()">
+            <span class="material-symbols-outlined">send</span> Поделиться отчетом
+        </button>
+        <div class="dash-grid">
+            <div class="dash-card" onclick="openFinModal('base')">
+                <div class="dash-title">Основное</div>
+                <div class="dash-sum" id="dashBaseSum">0 грн</div>
+                <div class="dash-sub" id="dashBaseSub">0 дней</div>
+            </div>
+            <div class="dash-card" onclick="openFinModal('ot15')">
+                <div class="dash-title">Переработки 1.5x</div>
+                <div class="dash-sum" id="dashOt15Sum">0 грн</div>
+                <div class="dash-sub" id="dashOt15Sub">0 часов</div>
+            </div>
+            <div class="dash-card" onclick="openFinModal('ot20')">
+                <div class="dash-title">Переработки 2.0x</div>
+                <div class="dash-sum" id="dashOt20Sum">0 грн</div>
+                <div class="dash-sub" id="dashOt20Sub">0 часов</div>
+            </div>
+            <div class="dash-card" style="border-color: #34d399;" onclick="openFinModal('side')">
+                <div class="dash-title" style="color: #34d399;">Доп. работы</div>
+                <div class="dash-sum" id="dashSideSum">0 грн</div>
+                <div class="dash-sub" id="dashSideSub">Отдельный доход</div>
+            </div>
+            <div class="dash-card" onclick="openFinModal('car')">
+                <div class="dash-title">Машина</div>
+                <div class="dash-sum" id="dashCarSum">0 грн</div>
+                <div class="dash-sub" id="dashCarSub">0 дней</div>
+            </div>
+            <div class="dash-card" onclick="openFinModal('prem')">
+                <div class="dash-title">Премия</div>
+                <div class="dash-sum" id="dashPremSum">0 грн</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ВКЛАДКА: БЛОКНОТ -->
+    <div class="content" id="view-notes">
+        <div class="notes-header">
+            <h3 style="font-weight: 400;">Мои вкладки / заметки</h3>
+            <button onclick="openNoteModal()"><span class="material-symbols-outlined">add</span></button>
+        </div>
+        <div class="notes-grid" id="notesGrid"></div>
+    </div>
+
+    <!-- ВКЛАДКА: ФОНЫ -->
+    <div class="content" id="view-backgrounds">
+        <div class="custom-bg-section">
+            <label for="customBgInput" class="custom-bg-btn"><span class="material-symbols-outlined">upload_file</span> Загрузить свое фото</label>
+            <input type="file" id="customBgInput" accept="image/*" style="display: none;">
+        </div>
+        <h3 style="margin-bottom: 15px; font-weight: 400;">Или выберите готовый:</h3>
+        <div class="bg-grid" id="bgGrid"></div>
+    </div>
+
+    <!-- ВКЛАДКА: НАСТРОЙКИ ЗАЩИТЫ -->
+    <div class="content" id="view-settings">
+        <h3 style="margin-bottom: 20px;">Метод разблокировки</h3>
+        <div style="background: rgba(30, 25, 50, 0.65); border-radius: 16px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 15px; font-size: 16px;"><input type="radio" name="authMethod" value="none" onchange="changeAuthMethod()" style="width: 20px; height: 20px;"> Отключено (Свободный вход)</label>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 15px; font-size: 16px;"><input type="radio" name="authMethod" value="fingerprint" onchange="changeAuthMethod()" style="width: 20px; height: 20px;"> Отпечаток пальца</label>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 16px;"><input type="radio" name="authMethod" value="pin" onchange="changeAuthMethod()" style="width: 20px; height: 20px;"> ПИН-код (4 цифры)</label>
+        </div>
+        <div id="pinSetupBlock" style="display: none; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin-top: 10px;">
+            <p style="margin-bottom: 10px; color:#d8b4fe;">Установите новый ПИН-код:</p>
+            <input type="number" id="newPinInput" placeholder="1234" style="padding: 10px; border-radius: 8px; border:none; background:#000; color:#fff; width: 100px; text-align:center; font-size: 18px; letter-spacing: 5px;">
+            <button onclick="saveNewPin()" style="background: #a855f7; border:none; padding: 10px 20px; border-radius: 8px; color:#fff; margin-left: 10px; cursor:pointer;">Сохранить</button>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА ФИНАНСОВ -->
+    <div class="modal-overlay" id="finModal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="finModalTitle">Настройки</h3><button class="close-modal-btn" onclick="closeOverlay()">✕</button></div>
+            <div id="finModalBody"></div>
+            <button class="btn-mini-add" id="finModalSaveBtn" style="margin-top: 20px;">Готово (Сохранить)</button>
+        </div>
+    </div>
+    
+    <!-- МОДАЛКА РЕДАКТИРОВАНИЯ ЗАДАЧИ -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Редактировать задачу</h3><button class="close-modal-btn" onclick="closeOverlay()">✕</button></div>
+            <textarea id="editTaskText" placeholder="Текст задачи" style="height:80px; width:100%;"></textarea>
+            <input type="text" id="editTaskTime" placeholder="Выберите дату и время" readonly style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff; outline:none; margin-bottom:15px;">
+            <div class="modal-actions"><button class="btn-cancel" onclick="closeOverlay()">Отмена</button><button class="btn-save" onclick="saveEditedTask()">Сохранить</button></div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА ЗАМЕТКИ -->
+    <div class="modal-overlay" id="noteModal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="noteModalTitle">Новая заметка</h3><button class="close-modal-btn" onclick="closeOverlay()">✕</button></div>
+            <input type="text" id="noteTitleInput" placeholder="Заголовок (необязательно)" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff; outline:none; margin-bottom:10px;">
+            <textarea id="noteContentInput" placeholder="Текст заметки..."></textarea>
+            <div class="modal-actions"><button class="btn-cancel" onclick="closeOverlay()">Отмена</button><button class="btn-save" onclick="saveNote()">Сохранить</button></div>
+        </div>
+    </div>
+
+    <div class="bottom-bar" id="bottomBar">
+        <div class="input-glass">
+            <span class="material-symbols-outlined cal-icon-trigger" id="calTriggerIcon" style="color:#d8b4fe; margin-right:5px; font-size:22px; cursor:pointer;">calendar_today</span>
+            <input type="text" id="taskTime" placeholder="" readonly style="display:none;">
+            <input type="text" id="taskInput" placeholder="Пиши или диктуй задачу...">
+            <button class="btn-action mic" id="actionBtn"><span class="material-symbols-outlined" id="actionIcon">mic</span></button>
+        </div>
+    </div>
+
+    <!-- ПОДКЛЮЧЕНИЕ СКРИПТОВ -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+
+    <script>
+        // --- 0. НАВИГАЦИЯ И КНОПКА "НАЗАД" (HISTORY API) ---
+        function handleNavigation() {
+            let hash = window.location.hash.replace('#', '');
+            let isModal = hash.includes('-modal'); let isMenu = hash.includes('-menu');
+            if (!isModal) document.querySelectorAll('.modal-overlay.active').forEach(el => el.classList.remove('active'));
+            if (!isMenu) { sideMenu.classList.remove('open'); menuOverlay.classList.remove('active'); }
+            let baseView = hash.replace('-modal', '').replace('-menu', '') || 'tasks';
+            const validViews = ['tasks', 'calendar', 'finance', 'stats', 'auto', 'notes', 'backgrounds', 'settings'];
+            if (validViews.includes(baseView)) {
+                const targetView = document.getElementById('view-' + baseView);
+                if (targetView && !targetView.classList.contains('active')) renderView(baseView);
+            }
+        }
+        window.addEventListener('hashchange', handleNavigation);
+
+        window.switchView = function(view) {
+            let currentHash = window.location.hash;
+            if (currentHash.includes('-menu') || currentHash.includes('-modal')) { history.replaceState(null, null, '#' + view); handleNavigation(); } 
+            else { window.location.hash = view; }
+        };
+
+        window.openModalBase = function(modalId) { let base = window.location.hash.replace('#', '').split('-')[0] || 'tasks'; window.location.hash = base + '-modal'; document.getElementById(modalId).classList.add('active'); };
+        window.closeOverlay = function() { if (window.location.hash.includes('-modal') || window.location.hash.includes('-menu')) { history.back(); } };
+
+        const menuBtn = document.getElementById('menuBtn'); const sideMenu = document.getElementById('sideMenu'); const menuOverlay = document.getElementById('menuOverlay');
+        menuBtn.addEventListener('click', () => { let base = window.location.hash.replace('#', '').split('-')[0] || 'tasks'; window.location.hash = base + '-menu'; sideMenu.classList.add('open'); menuOverlay.classList.add('active'); });
+
+        function renderView(view) {
+            document.querySelectorAll('.content').forEach(el => el.classList.remove('active')); document.getElementById('view-' + view).classList.add('active'); document.getElementById('bottomBar').style.display = view === 'tasks' ? 'block' : 'none';
+            const titles = { tasks: "Задачи на неделю", calendar: "Календарь", finance: "Финансы", stats: "Статистика", auto: "Бортжурнал", notes: "Блокнот", backgrounds: "Фоны", settings: "Настройки" };
+            document.getElementById('headerTitle').innerText = titles[view] || "VPlaner";
+            if(view === 'tasks') renderTasksWeek(); if(view === 'calendar') renderCalendar(); if(view === 'finance') loadFinanceData(); if(view === 'stats') renderStats(); if(view === 'auto') { renderAutoStatus(); renderAutoLogs(); } if(view === 'notes') renderNotes();
+        }
+
+        // --- 1. ФОНЫ ---
+        const backgrounds = ["https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1080&q=80", "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1080&q=80", "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1080&q=80", "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1080&q=80", "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1080&q=80", "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=1080&q=80", "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1080&q=80", "https://images.unsplash.com/photo-1538385016160-2e55d64ff24a?auto=format&fit=crop&w=1080&q=80", "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1080&q=80", "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=1080&q=80"];
+        let currentBgIndex = localStorage.getItem('bgIndex') || 2;
+        function setAppBackground() { if (currentBgIndex === 'custom') { const cBg = localStorage.getItem('customBg'); if (cBg) document.body.style.backgroundImage = `url('${cBg}')`; } else { document.body.style.backgroundImage = `url('${backgrounds[currentBgIndex]}')`; } } setAppBackground();
+        function renderBackgrounds() { const bgGrid = document.getElementById('bgGrid'); bgGrid.innerHTML = ''; backgrounds.forEach((url, index) => { const div = document.createElement('div'); div.className = `bg-item ${index == currentBgIndex ? 'active' : ''}`; div.style.backgroundImage = `url('${url}')`; div.onclick = () => { currentBgIndex = index; localStorage.setItem('bgIndex', currentBgIndex); setAppBackground(); renderBackgrounds(); }; bgGrid.appendChild(div); }); } renderBackgrounds();
+        document.getElementById('customBgInput').addEventListener('change', function(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(event) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_WIDTH = 1920; const MAX_HEIGHT = 1080; let width = img.width; let height = img.height; if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); try { localStorage.setItem('customBg', canvas.toDataURL('image/jpeg', 0.6)); currentBgIndex = 'custom'; localStorage.setItem('bgIndex', currentBgIndex); setAppBackground(); renderBackgrounds(); } catch (e) { alert("Файл слишком большой!"); } }; img.src = event.target.result; }; reader.readAsDataURL(file); });
+
+        // --- 2. ЗАЩИТА ---
+        if(localStorage.getItem('biometricsEnabled') === 'true') { localStorage.setItem('authMethod', 'fingerprint'); localStorage.removeItem('biometricsEnabled'); }
+        let authMethod = localStorage.getItem('authMethod') || 'none'; let savedPin = localStorage.getItem('savedPin') || '0000'; let currentEnteredPin = "";
+        function initAuth() { const ls = document.getElementById('lockScreen'); if (authMethod === 'none') { ls.classList.add('hidden'); } else if (authMethod === 'pin') { ls.classList.remove('hidden'); document.getElementById('pinPad').style.display = 'grid'; document.getElementById('pinDots').style.display = 'flex'; document.getElementById('fingerprintOnly').style.display = 'none'; document.getElementById('bioBtnFallback').style.display = 'flex'; updatePinDots(); } else if (authMethod === 'fingerprint') { ls.classList.remove('hidden'); document.getElementById('pinPad').style.display = 'none'; document.getElementById('pinDots').style.display = 'none'; document.getElementById('fingerprintOnly').style.display = 'block'; setTimeout(tryBiometrics, 500); } document.querySelectorAll('input[name="authMethod"]').forEach(el => { if(el.value === authMethod) el.checked = true; }); document.getElementById('pinSetupBlock').style.display = authMethod === 'pin' ? 'block' : 'none'; }
+        function changeAuthMethod() { authMethod = document.querySelector('input[name="authMethod"]:checked').value; localStorage.setItem('authMethod', authMethod); document.getElementById('pinSetupBlock').style.display = authMethod === 'pin' ? 'block' : 'none'; if(authMethod === 'fingerprint') alert("Убедитесь, что телефон поддерживает WebAuthn. Иначе используйте ПИН."); }
+        function saveNewPin() { let p = document.getElementById('newPinInput').value; if(p.length >= 4) { localStorage.setItem('savedPin', p); savedPin = p; alert("ПИН сохранен!"); } else { alert("Минимум 4 цифры."); } }
+        function enterPin(num) { if(currentEnteredPin.length < 4) currentEnteredPin += num; updatePinDots(); if(currentEnteredPin.length === 4) { setTimeout(() => { if(currentEnteredPin === savedPin) { document.getElementById('lockScreen').classList.add('hidden'); currentEnteredPin = ""; } else { alert("Неверный ПИН"); currentEnteredPin = ""; updatePinDots(); } }, 200); } }
+        function clearPin() { currentEnteredPin = currentEnteredPin.slice(0, -1); updatePinDots(); }
+        function updatePinDots() { document.querySelectorAll('.pin-dot').forEach((d, i) => d.classList.toggle('filled', i < currentEnteredPin.length)); }
+        async function tryBiometrics() { try { const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge); await navigator.credentials.get({ publicKey: { challenge, timeout: 60000, userVerification: "required" }}); document.getElementById('lockScreen').classList.add('hidden'); } catch(e) { console.log("Биометрия отменена"); } }
+        let unlockClicks = 0; let unlockTimer; window.emergencyUnlock = function() { unlockClicks++; clearTimeout(unlockTimer); unlockTimer = setTimeout(() => unlockClicks = 0, 1500); if(unlockClicks >= 5) { localStorage.setItem('authMethod', 'none'); authMethod = 'none'; document.getElementById('lockScreen').classList.add('hidden'); alert("Защита снята!"); } };
+
+        window.exportData = function() { const allData = {}; for (let i = 0; i < localStorage.length; i++) { const key = localStorage.key(i); allData[key] = localStorage.getItem(key); } const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData)); a.download = "vplaner_backup.json"; document.body.appendChild(a); a.click(); a.remove(); closeOverlay(); };
+        window.importData = function(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = function(ev) { try { const data = JSON.parse(ev.target.result); for (const key in data) { localStorage.setItem(key, data[key]); } alert("Восстановлено!"); location.reload(); } catch(err) { alert("Ошибка файла!"); } }; r.readAsText(f); closeOverlay(); };
+        function shareContent(title, text) { if (navigator.share) { navigator.share({ title: title, text: text }).catch(() => {}); } else { navigator.clipboard.writeText(title + "\n\n" + text).then(() => alert("Скопировано в буфер")); } }
+
+        // --- 4. ЗАДАЧИ ---
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        const fpConfig = { enableTime: true, dateFormat: "Y-m-d\TH:i", locale: "ru", time_24hr: true, disableMobile: "true" }; const mainDatePicker = flatpickr("#taskTime", fpConfig); const editDatePicker = flatpickr("#editTaskTime", fpConfig);
+        document.getElementById('calTriggerIcon').addEventListener('click', () => mainDatePicker.open()); mainDatePicker.config.onChange.push((s, ds) => { document.getElementById('calTriggerIcon').style.color = ds ? '#a855f7' : '#d8b4fe'; });
+
+        function requestNotificationPerm() { if ("Notification" in window) { Notification.requestPermission().then(p => { if(p === "granted") alert("Уведомления включены!"); else alert("Разрешение не получено."); }); } }
+        setInterval(() => { if (Notification.permission !== "granted") return; const now = new Date(); tasks.forEach(t => { if (t.time && !t.notified && !t.done) { const taskTime = new Date(t.time); if (taskTime <= now) { new Notification("VPlaner: Пора!", { body: t.text, icon: 'icon.png' }); if(navigator.vibrate) navigator.vibrate([200, 100, 200]); t.notified = true; saveAndRender(); } } }); }, 30000);
+
+        function getWeekBounds() { let curr = new Date(); let first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1); let start = new Date(curr.setDate(first)); start.setHours(0,0,0,0); let end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999); return {start, end}; }
+        function renderTasksWeek() { const containerWeek = document.getElementById('tasksCurrentWeek'); containerWeek.innerHTML = ''; const containerNoDate = document.getElementById('tasksNoDate'); containerNoDate.innerHTML = ''; const bounds = getWeekBounds(); const now = new Date(); let hasWeek = false; let hasNoDate = false; let sorted = [...tasks].sort((a, b) => { if(!a.time) return 1; if(!b.time) return -1; return new Date(a.time) - new Date(b.time); }); sorted.forEach((task) => { const origIndex = tasks.indexOf(task); let html = ''; if(task.time) { let d = new Date(task.time); if(d >= bounds.start && d <= bounds.end) { hasWeek = true; let tStr = d.toLocaleDateString('ru-RU', {weekday: 'short', day: 'numeric'}) + ' ' + d.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'}); let statusClass = ''; if (!task.done) { if (d < now) statusClass = 'overdue'; else if ((d - now) < 12*60*60*1000) statusClass = 'soon'; } html = `<div class="task-card ${statusClass} ${task.done ? 'done' : ''}"><div class="checkbox ${task.done ? 'checked' : ''}" onclick="toggleTask(${origIndex})"></div><div class="task-info"><div class="task-title">${task.text}</div><div class="task-time">${tStr}</div></div><div class="task-actions"><span class="material-symbols-outlined share-icon" onclick="shareTask(${origIndex})">share</span><span class="material-symbols-outlined edit-icon" onclick="openEditModal(${origIndex})">edit</span><span class="material-symbols-outlined del-icon" onclick="deleteTask(${origIndex})">delete</span></div></div>`; containerWeek.innerHTML += html; } } else { hasNoDate = true; html = `<div class="task-card ${task.done ? 'done' : ''}"><div class="checkbox ${task.done ? 'checked' : ''}" onclick="toggleTask(${origIndex})"></div><div class="task-info"><div class="task-title">${task.text}</div></div><div class="task-actions"><span class="material-symbols-outlined share-icon" onclick="shareTask(${origIndex})">share</span><span class="material-symbols-outlined edit-icon" onclick="openEditModal(${origIndex})">edit</span><span class="material-symbols-outlined del-icon" onclick="deleteTask(${origIndex})">delete</span></div></div>`; containerNoDate.innerHTML += html; } }); if(!hasWeek) containerWeek.innerHTML = '<div style="color:#bbb; text-align:center;">На этой неделе пусто. Отдыхаем!</div>'; if(hasNoDate) containerNoDate.innerHTML = '<div class="task-section-title">Без привязки ко времени</div>' + containerNoDate.innerHTML; }
+
+        window.toggleTask = function(i) { tasks[i].done = !tasks[i].done; saveAndRender(); }; window.deleteTask = function(i) { tasks.splice(i, 1); saveAndRender(); }; window.shareTask = function(i) { const t = tasks[i]; let det = t.text; if (t.time) det += "\n📅 Время: " + new Date(t.time).toLocaleString('ru-RU'); shareContent('Задача', det); };
+        function saveAndRender() { localStorage.setItem('tasks', JSON.stringify(tasks)); if(document.getElementById('view-tasks').classList.contains('active')) renderTasksWeek(); if(document.getElementById('view-calendar').classList.contains('active')) { renderCalendar(); if(selectedDateStr) renderCalendarTasks(selectedDateStr); } }
+
+        const taskInput = document.getElementById('taskInput'); const actionBtn = document.getElementById('actionBtn'); const actionIcon = document.getElementById('actionIcon');
+        function addTaskFromInput() { let text = taskInput.value.trim(); if(!text) return; tasks.push({ text: text, time: document.getElementById('taskTime').value, done: false, notified: false }); taskInput.value = ''; mainDatePicker.clear(); document.getElementById('calTriggerIcon').style.color = '#d8b4fe'; updateButtonState(); saveAndRender(); } taskInput.addEventListener('input', updateButtonState); taskInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') addTaskFromInput(); }); function updateButtonState() { if (taskInput.value.trim().length > 0) { actionIcon.innerText = 'send'; actionBtn.classList.remove('mic'); } else { actionIcon.innerText = 'mic'; actionBtn.classList.add('mic'); } }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; let recognition = null; if (SpeechRecognition) { recognition = new SpeechRecognition(); recognition.lang = 'ru-RU'; recognition.interimResults = false; recognition.onstart = () => { taskInput.placeholder = "Слушаю..."; actionBtn.style.transform = "scale(1.1)"; }; recognition.onend = () => { taskInput.placeholder = "Пиши или диктуй задачу..."; actionBtn.style.transform = "scale(1)"; }; recognition.onresult = (e) => { taskInput.value += (taskInput.value ? ' ' : '') + e.results[0][0].transcript; updateButtonState(); }; } actionBtn.addEventListener('click', () => { if (taskInput.value.trim().length > 0) { addTaskFromInput(); } else { if (recognition) { try { recognition.start(); } catch(e) {} } else { alert("Голос не поддерживается."); } } });
+        let currentEditIndex = null; window.openEditModal = function(i) { currentEditIndex = i; const t = tasks[i]; document.getElementById('editTaskText').value = t.text; if(t.time) editDatePicker.setDate(t.time); else editDatePicker.clear(); openModalBase('editModal'); }; window.saveEditedTask = function() { if (currentEditIndex !== null) { const nT = document.getElementById('editTaskText').value.trim(); if (nT) { tasks[currentEditIndex].text = nT; tasks[currentEditIndex].time = document.getElementById('editTaskTime').value; tasks[currentEditIndex].notified = false; saveAndRender(); closeOverlay(); } } };
+
+        // --- 5. КАЛЕНДАРЬ ---
+        let calDate = new Date(); let selectedDateStr = null; window.changeMonth = function(dir) { calDate.setMonth(calDate.getMonth() + dir); renderCalendar(); };
+        function renderCalendar() { const grid = document.getElementById('calGrid'); grid.innerHTML = ''; const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]; document.getElementById('calMonthYear').innerText = monthNames[calDate.getMonth()] + ' ' + calDate.getFullYear(); ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].forEach(d => grid.innerHTML += `<div class="cal-day-name">${d}</div>`); const y = calDate.getFullYear(); const m = calDate.getMonth(); const startOffset = (new Date(y, m, 1).getDay() || 7) - 1; const daysInMonth = new Date(y, m + 1, 0).getDate(); const taskDates = new Set(); tasks.forEach(t => { if (t.time && !t.done) taskDates.add(t.time.split('T')[0]); }); const today = new Date(); for (let i = 0; i < startOffset; i++) grid.innerHTML += `<div></div>`; for (let i = 1; i <= daysInMonth; i++) { const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`; let cls = 'cal-day' + (today.getFullYear() === y && today.getMonth() === m && today.getDate() === i ? ' today' : '') + (selectedDateStr === dStr ? ' selected' : ''); const dDiv = document.createElement('div'); dDiv.className = cls; dDiv.innerHTML = `${i} ${taskDates.has(dStr) ? '<div class="dot"></div>' : ''}`; dDiv.onclick = () => { selectedDateStr = dStr; renderCalendar(); renderCalendarTasks(dStr); }; grid.appendChild(dDiv); } }
+        function renderCalendarTasks(dStr) { document.getElementById('selectedDateTitle').innerText = 'События на: ' + dStr; const ctList = document.getElementById('calendarTaskList'); ctList.innerHTML = ''; const dTasks = tasks.filter(t => t.time && t.time.split('T')[0] === dStr); if (dTasks.length === 0) { ctList.innerHTML = '<div style="color:#bbb;">Ничего нет.</div>'; return; } dTasks.forEach(t => { ctList.innerHTML += `<div class="task-card ${t.done?'done':''}"><div class="checkbox ${t.done?'checked':''}" onclick="toggleTask(${tasks.indexOf(t)})"></div><div class="task-info"><div class="task-title">${t.text}</div></div></div>`; }); }
+
+        // --- 6. БЛОКНОТ ---
+        let notesList = JSON.parse(localStorage.getItem('notesList')) || []; function renderNotes() { const grid = document.getElementById('notesGrid'); grid.innerHTML = ''; if (notesList.length === 0) { grid.innerHTML = '<div style="color:#ccc; grid-column: 1 / -1; text-align:center; padding: 20px;">Нет заметок.</div>'; return; } notesList.forEach(note => { grid.innerHTML += `<div class="note-widget" onclick="openNoteModal(${note.id})">${note.title ? `<h4>${note.title}</h4>` : ''}<p>${note.content}</p><div class="note-actions"><span class="material-symbols-outlined share-note" onclick="event.stopPropagation(); shareNote(${note.id})">share</span><span class="material-symbols-outlined del-note" onclick="event.stopPropagation(); deleteNote(${note.id})">delete</span></div></div>`; }); } let currentNoteId = null; window.openNoteModal = function(id = null) { currentNoteId = id; if (id !== null) { const note = notesList.find(n => n.id === id); document.getElementById('noteTitleInput').value = note.title; document.getElementById('noteContentInput').value = note.content; document.getElementById('noteModalTitle').innerText = 'Редактировать заметку'; } else { document.getElementById('noteTitleInput').value = ''; document.getElementById('noteContentInput').value = ''; document.getElementById('noteModalTitle').innerText = 'Новая заметка'; } openModalBase('noteModal'); }; window.saveNote = function() { const title = document.getElementById('noteTitleInput').value.trim(); const content = document.getElementById('noteContentInput').value.trim(); if (!content && !title) return closeOverlay(); if (currentNoteId !== null) { const note = notesList.find(n => n.id === currentNoteId); note.title = title; note.content = content; } else { notesList.push({ id: Date.now(), title: title, content: content }); } localStorage.setItem('notesList', JSON.stringify(notesList)); renderNotes(); closeOverlay(); }; window.deleteNote = function(id) { notesList = notesList.filter(n => n.id !== id); localStorage.setItem('notesList', JSON.stringify(notesList)); renderNotes(); }; window.shareNote = function(id) { const note = notesList.find(n => n.id === id); if (note) shareContent(note.title || 'Заметка', note.content); };
+
+        // --- 7. БОРТЖУРНАЛ АВТО ---
+        let autoLogs = JSON.parse(localStorage.getItem('autoLogs')) || []; let autoSettings = JSON.parse(localStorage.getItem('autoSettings')) || { currentOdo: 0, lastOil: 0, lastGbo: 0, lastGrm: 0 }; function renderAutoStatus() { document.getElementById('globalOdo').value = autoSettings.currentOdo || ''; const alerts = document.getElementById('maintenanceAlerts'); alerts.innerHTML = ''; const odo = autoSettings.currentOdo || 0; if(odo === 0) { alerts.innerHTML = '<div style="color:#bbb; font-size:13px;">Введите текущий пробег, чтобы включить напоминания о ТО.</div>'; return; } alerts.innerHTML += createBar('Масло (10 тыс. км)', 10000, odo - (autoSettings.lastOil || odo), autoSettings.lastOil); alerts.innerHTML += createBar('Фильтры ГБО (10 тыс. км)', 10000, odo - (autoSettings.lastGbo || odo), autoSettings.lastGbo); alerts.innerHTML += createBar('ГРМ (60 тыс. км)', 60000, odo - (autoSettings.lastGrm || odo), autoSettings.lastGrm); } function createBar(name, limit, currentDist, isSet) { if(!isSet) return `<div style="margin-bottom: 8px; font-size: 13px; color: #bbb;">${name}: <span>Счетчик не запущен</span></div>`; const left = limit - currentDist; let pct = (currentDist / limit) * 100; if (pct > 100) pct = 100; let color = '#34d399'; let text = `Осталось ${left} км`; if (left <= 1000) color = '#fbbf24'; if (left <= 0) { color = '#f87171'; text = 'Требуется замена!'; } return `<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;"><span>${name}</span><span style="color: ${color}; font-weight: bold;">${text}</span></div><div class="maintenance-bar"><div class="maintenance-fill" style="width: ${pct}%; background: ${color};"></div></div></div>`; } window.updateGlobalOdo = function() { autoSettings.currentOdo = parseFloat(document.getElementById('globalOdo').value) || 0; localStorage.setItem('autoSettings', JSON.stringify(autoSettings)); renderAutoStatus(); }; document.getElementById('gasDate').valueAsDate = new Date(); document.getElementById('serviceDate').valueAsDate = new Date(); window.calcGas = function() { const km = parseFloat(document.getElementById('gasTrip').value) || 0; const gasL = parseFloat(document.getElementById('gasLiters').value) || 0; const petL = parseFloat(document.getElementById('petrolLiters').value) || 0; const sum = parseFloat(document.getElementById('gasSum').value) || 0; const res = document.getElementById('fuelCalcResult'); let txt = ''; if (km > 0) { if(gasL > 0) txt += `Расход газа: <span style="color:#fff">${((gasL/km)*100).toFixed(1)} л/100км</span><br>`; if(petL > 0) txt += `Расход бенз: <span style="color:#fff">${((petL/km)*100).toFixed(1)} л/100км</span><br>`; if(sum > 0) txt += `Цена поездки: <span style="color:#fff">${(sum/km).toFixed(2)} грн / 1 км</span>`; } res.innerHTML = txt || 'Введите дистанцию и литры...'; }; window.addGasLog = function() { const date = document.getElementById('gasDate').value; const km = document.getElementById('gasTrip').value; const gasL = document.getElementById('gasLiters').value; const petL = document.getElementById('petrolLiters').value; const sum = document.getElementById('gasSum').value; if(!km || (!gasL && !petL)) return alert("Введите пройденные км и топливо!"); autoLogs.unshift({ id: Date.now(), type: 'refuel', date, km, gasL, petL, sum, consGas: gasL ? ((parseFloat(gasL) / parseFloat(km)) * 100).toFixed(1) : 0, consPet: petL ? ((parseFloat(petL) / parseFloat(km)) * 100).toFixed(1) : 0 }); localStorage.setItem('autoLogs', JSON.stringify(autoLogs)); document.getElementById('gasTrip').value = ''; document.getElementById('gasLiters').value = ''; document.getElementById('petrolLiters').value = ''; document.getElementById('gasSum').value = ''; calcGas(); renderAutoLogs(); }; window.addServiceLog = function() { const date = document.getElementById('serviceDate').value; const odo = document.getElementById('serviceOdo').value; const desc = document.getElementById('serviceDesc').value; const sum = document.getElementById('serviceSum').value; if(!desc) return alert("Введите описание работы!"); autoLogs.unshift({ id: Date.now(), type: 'service', date, odo, desc, sum }); localStorage.setItem('autoLogs', JSON.stringify(autoLogs)); if(odo) { autoSettings.currentOdo = parseFloat(odo); if(document.getElementById('chkOil').checked) autoSettings.lastOil = parseFloat(odo); if(document.getElementById('chkGbo').checked) autoSettings.lastGbo = parseFloat(odo); if(document.getElementById('chkGrm').checked) autoSettings.lastGrm = parseFloat(odo); localStorage.setItem('autoSettings', JSON.stringify(autoSettings)); renderAutoStatus(); } document.getElementById('serviceOdo').value = ''; document.getElementById('serviceDesc').value = ''; document.getElementById('serviceSum').value = ''; document.getElementById('chkOil').checked = false; document.getElementById('chkGbo').checked = false; document.getElementById('chkGrm').checked = false; renderAutoLogs(); }; function renderAutoLogs() { const container = document.getElementById('autoLogsContainer'); container.innerHTML = ''; if (autoLogs.length === 0) { container.innerHTML = '<div style="color:#bbb;">Нет записей.</div>'; return; } autoLogs.forEach(log => { let title = ''; let details = ''; let sumText = log.sum ? `<strong>${log.sum} грн</strong>` : ''; let borderColor = '#a855f7'; if (log.type === 'refuel') { title = `⛽ Заправка`; let fInfo = []; if(log.gasL > 0) fInfo.push(`Газ: ${log.gasL}л (${log.consGas} л/100)`); if(log.petL > 0) fInfo.push(`Бенз: ${log.petL}л (${log.consPet} л/100)`); details = `Дистанция: ${log.km} км <br> <span style="color:#34d399;">${fInfo.join(' | ')}</span>`; borderColor = '#34d399'; } else if (log.type === 'service') { title = `🛠 ${log.desc}`; details = log.odo ? `Общий пробег: ${log.odo} км` : 'Пробег не указан'; borderColor = '#60a5fa'; } else { title = log.desc || 'Обслуживание'; details = (log.lit ? log.lit+' л | ' : '') + (log.km ? log.km+' км' : ''); } container.innerHTML += `<div class="auto-log-item" style="border-left-color: ${borderColor}"><div class="auto-log-info"><div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;"><p style="margin: 0; font-size: 15px; font-weight: 500;">${title}</p><span>${sumText}</span></div><span style="color: #bbb; font-size: 13px; display: block; margin-bottom: 3px;">${details}</span><span style="color: #888; font-size: 12px;">📅 ${log.date}</span></div><span class="material-symbols-outlined" style="color:#f87171; cursor:pointer; margin-left: 15px;" onclick="deleteAutoLog(${log.id})">delete</span></div>`; }); } window.deleteAutoLog = function(id) { autoLogs = autoLogs.filter(l => l.id !== id); localStorage.setItem('autoLogs', JSON.stringify(autoLogs)); renderAutoLogs(); };
+
+        // --- 8. ФИНАНСЫ И СТАТИСТИКА ---
+        function initFinanceMonths() { const select = document.getElementById('financeMonthSelect'); select.innerHTML = ''; const mNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]; const d = new Date(); const y = d.getFullYear(); const m = d.getMonth(); for(let i = 1; i >= -12; i--) { let dt = new Date(y, m+i, 1); let val = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0'); let opt = document.createElement('option'); opt.value = val; opt.innerText = mNames[dt.getMonth()] + ' ' + dt.getFullYear(); if(i === 0) opt.selected = true; select.appendChild(opt); } } initFinanceMonths();
+        let currentFinanceData = {}; function loadFinanceData() { const m = document.getElementById('financeMonthSelect').value; let d = JSON.parse(localStorage.getItem('salary_' + m)) || {}; currentFinanceData = { baseDays: d.baseDays || (d.baseHours ? d.baseHours/8 : 0), baseRate: d.baseRate || 138, ot15: d.ot15 || [], rate15: d.rate15 || 165, ot20: d.ot20 || [], rate20: d.rate20 || 220, sideJobs: d.sideJobs || [], carDays: d.carDays || 0, carRate: d.carRate || 150, premiumAmount: d.premiumAmount || 0 }; updateDash(); } function saveFinanceData() { const m = document.getElementById('financeMonthSelect').value; localStorage.setItem('salary_' + m, JSON.stringify(currentFinanceData)); updateDash(); }
+        function updateDash() { const d = currentFinanceData; let sumBase = (parseFloat(d.baseDays)||0) * 8 * (parseFloat(d.baseRate)||0); let h15 = 0; d.ot15.forEach(i => h15 += parseFloat(i.hours)||0); let sum15 = h15 * (parseFloat(d.rate15)||0); let h20 = 0; d.ot20.forEach(i => h20 += parseFloat(i.hours)||0); let sum20 = h20 * (parseFloat(d.rate20)||0); let sumSide = 0; d.sideJobs.forEach(i => sumSide += parseFloat(i.sum)||0); let sumCar = (parseFloat(d.carDays)||0) * (parseFloat(d.carRate)||0); let sumPrem = parseFloat(d.premiumAmount)||0; document.getElementById('dashBaseSum').innerText = sumBase + ' грн'; document.getElementById('dashBaseSub').innerText = (d.baseDays||0) + ' дней ('+((d.baseDays||0)*8)+'ч)'; document.getElementById('dashOt15Sum').innerText = sum15 + ' грн'; document.getElementById('dashOt15Sub').innerText = h15 + ' часов'; document.getElementById('dashOt20Sum').innerText = sum20 + ' грн'; document.getElementById('dashOt20Sub').innerText = h20 + ' часов'; document.getElementById('dashSideSum').innerText = sumSide + ' грн'; document.getElementById('dashSideSub').innerText = d.sideJobs.length + ' записей'; document.getElementById('dashCarSum').innerText = sumCar + ' грн'; document.getElementById('dashCarSub').innerText = (d.carDays||0) + ' дней'; document.getElementById('dashPremSum').innerText = sumPrem + ' грн'; document.getElementById('dashTotal').innerText = (sumBase + sum15 + sum20 + sumCar + sumPrem) + ' грн'; }
+        window.openFinModal = function(type) { const title = document.getElementById('finModalTitle'); const body = document.getElementById('finModalBody'); body.innerHTML = ''; if(type === 'base') { title.innerText = "Основное время"; body.innerHTML = `<div class="form-row"><label>Отработанные дни (по 8ч)</label><input type="number" id="m_baseDays" value="${currentFinanceData.baseDays||''}"></div><div class="form-row"><label>Ставка в час (грн)</label><input type="number" id="m_baseRate" value="${currentFinanceData.baseRate}"></div>`; } else if (type === 'car' || type === 'prem') { title.innerText = type === 'car' ? "Машина" : "Премия"; if(type === 'car') body.innerHTML = `<div class="form-row"><label>Дней использования</label><input type="number" id="m_carDays" value="${currentFinanceData.carDays||''}"></div><div class="form-row"><label>Ставка за день (грн)</label><input type="number" id="m_carRate" value="${currentFinanceData.carRate}"></div>`; else body.innerHTML = `<div class="form-row"><label>Сумма премии (грн)</label><input type="number" id="m_prem" value="${currentFinanceData.premiumAmount||''}"></div>`; } else { title.innerText = type === 'ot15' ? "Переработки 1.5x" : type === 'ot20' ? "Переработки 2.0x" : "Доп. работы"; let rateHtml = ''; if(type === 'ot15') rateHtml = `<div class="form-row"><label>Ставка 1.5x (грн/ч)</label><input type="number" id="m_rate15" value="${currentFinanceData.rate15}"></div>`; if(type === 'ot20') rateHtml = `<div class="form-row"><label>Ставка 2.0x (грн/ч)</label><input type="number" id="m_rate20" value="${currentFinanceData.rate20}"></div>`; body.innerHTML = rateHtml + `<div id="m_listContainer"></div><button class="btn-mini-add" style="background: rgba(168,85,247,0.2); color:#d8b4fe;" onclick="addSalRow('${type}')">+ Добавить запись</button>`; let arr = type === 'side' ? currentFinanceData.sideJobs : currentFinanceData[type]; arr.forEach((item, idx) => addSalRowHtml(type, item, idx)); } document.getElementById('finModalSaveBtn').onclick = () => { saveModalData(type); closeOverlay(); }; openModalBase('finModal'); };
+        window.autoExpand = function(el) { el.style.height = 'inherit'; el.style.height = el.scrollHeight + 'px'; }; function getTodayStr() { let d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); } window.addSalRow = function(type) { let item = type === 'side' ? {date: getTodayStr(), desc: '', sum: ''} : {date: getTodayStr(), desc: '', hours: ''}; let arr = type === 'side' ? currentFinanceData.sideJobs : currentFinanceData[type]; arr.push(item); addSalRowHtml(type, item, arr.length - 1); }; function addSalRowHtml(type, item, idx) { let container = document.getElementById('m_listContainer'); let div = document.createElement('div'); div.className = 'dynamic-row'; let valInput = type === 'side' ? `<input type="number" class="r-val" placeholder="грн" value="${item.sum||''}">` : `<input type="number" class="r-val" placeholder="Часы" value="${item.hours||''}">`; div.innerHTML = `<div class="dynamic-row-header"><input type="date" class="r-date" value="${item.date||getTodayStr()}">${valInput}<button class="btn-mini-del" onclick="this.closest('.dynamic-row').remove()">✕</button></div><textarea class="r-desc" placeholder="Описание / Объект" oninput="autoExpand(this)">${item.desc||''}</textarea>`; container.appendChild(div); setTimeout(() => autoExpand(div.querySelector('.r-desc')), 10); }
+        function saveModalData(type) { if(type === 'base') { currentFinanceData.baseDays = document.getElementById('m_baseDays').value; currentFinanceData.baseRate = document.getElementById('m_baseRate').value; } else if (type === 'car') { currentFinanceData.carDays = document.getElementById('m_carDays').value; currentFinanceData.carRate = document.getElementById('m_carRate').value; } else if (type === 'prem') { currentFinanceData.premiumAmount = document.getElementById('m_prem').value; } else { if(type === 'ot15') currentFinanceData.rate15 = document.getElementById('m_rate15').value; if(type === 'ot20') currentFinanceData.rate20 = document.getElementById('m_rate20').value; let newArr = []; document.querySelectorAll('#m_listContainer .dynamic-row').forEach(row => { let d = row.querySelector('.r-date').value; let desc = row.querySelector('.r-desc').value; let val = row.querySelector('.r-val').value; if(type === 'side') newArr.push({date: d, desc: desc, sum: val}); else newArr.push({date: d, desc: desc, hours: val}); }); if(type === 'side') currentFinanceData.sideJobs = newArr; else currentFinanceData[type] = newArr; } saveFinanceData(); renderStats(); }
+        window.shareFinanceReport = function() { const m = document.getElementById('financeMonthSelect'); const mText = m.options[m.selectedIndex].text; let d = currentFinanceData; let r = `📊 Финансы за ${mText}\n\n`; let bD = parseFloat(d.baseDays)||0; let bR = parseFloat(d.baseRate)||138; if(bD > 0) r += `🔹 Основное время: ${bD} дн. (${bD*8} ч.) = ${bD*8*bR} грн\n`; let h15=0; d.ot15.forEach(i=>h15+=parseFloat(i.hours)||0); if(h15>0) r += `🔹 Переработки 1.5x: ${h15} ч. = ${h15*(parseFloat(d.rate15)||165)} грн\n`; let h20=0; d.ot20.forEach(i=>h20+=parseFloat(i.hours)||0); if(h20>0) r += `🔹 Переработки 2.0x: ${h20} ч. = ${h20*(parseFloat(d.rate20)||220)} грн\n`; let cD = parseFloat(d.carDays)||0; let cR = parseFloat(d.carRate)||150; if(cD>0) r += `🚗 Машина: ${cD} дн. = ${cD*cR} грн\n`; let prem = parseFloat(d.premiumAmount)||0; if(prem>0) r += `🎁 Премия: ${prem} грн\n`; let total = (bD*8*bR) + (h15*(parseFloat(d.rate15)||165)) + (h20*(parseFloat(d.rate20)||220)) + (cD*cR) + prem; r += `\n💰 ИТОГО: ${total} грн\n`; let side=0; d.sideJobs.forEach(i=>side+=parseFloat(i.sum)||0); if(side>0) r += `\n🛠 Доп. работы (отдельно): ${side} грн\n`; shareContent(`Финансовый отчет - ${mText}`, r); }
+        function renderStats() { const container = document.getElementById('statsContainer'); container.innerHTML = ''; const today = new Date(); let maxTotal = 0; let statsData = []; const monthNamesShort = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"]; for (let i = 5; i >= 0; i--) { const d = new Date(today.getFullYear(), today.getMonth() - i, 1); const mStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); const saved = localStorage.getItem('salary_' + mStr); let total = 0; if (saved) { try { const data = JSON.parse(saved); const bD = parseFloat(data.baseDays) || (data.baseHours ? data.baseHours/8 : 0); const bR = parseFloat(data.baseRate)||138; let h15=0; if(data.ot15) data.ot15.forEach(x => h15+=parseFloat(x.hours)||0); let h20=0; if(data.ot20) data.ot20.forEach(x => h20+=parseFloat(x.hours)||0); const r15 = parseFloat(data.rate15)||165; const r20 = parseFloat(data.rate20)||220; const cD = parseFloat(data.carDays)||0; const cR = parseFloat(data.carRate)||150; const prem = parseFloat(data.premiumAmount)||0; total = (bD*8*bR) + (h15*r15) + (h20*r20) + (cD*cR) + prem; } catch(e){} } if (total > maxTotal) maxTotal = total; statsData.push({ label: monthNamesShort[d.getMonth()], total: total }); } statsData.forEach(stat => { let heightPct = maxTotal > 0 ? (stat.total / maxTotal) * 100 : 0; if (heightPct < 5 && stat.total > 0) heightPct = 5; container.innerHTML += `<div class="stat-bar-container"><div class="stat-val">${stat.total > 0 ? Math.round(stat.total) : ''}</div><div class="stat-bar" style="height: ${heightPct}%;"></div><div class="stat-month">${stat.label}</div></div>`; }); }
+
+        // --- ИНИЦИАЛИЗАЦИЯ И SERVICE WORKER ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initAuth();
+            if (!window.location.hash) { history.replaceState(null, null, '#tasks'); handleNavigation(); } else { handleNavigation(); }
+        });
+
+        // Регистрация Service Worker для работы без интернета
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => { console.log('SW зарегистрирован:', registration); })
+                    .catch(error => { console.log('Ошибка SW:', error); });
+            });
+        }
+    </script>
+</body>
+</html>
