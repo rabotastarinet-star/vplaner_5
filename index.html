@@ -646,7 +646,95 @@
         taskInput.addEventListener('input', updateButtonState); taskInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') addTaskFromInput(); }); 
         function updateButtonState() { if (taskInput.value.trim().length > 0) { actionIcon.innerText = 'send'; actionBtn.classList.remove('mic'); } else { actionIcon.innerText = 'mic'; actionBtn.classList.add('mic'); } }
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; let recognition = null; if (SpeechRecognition) { recognition = new SpeechRecognition(); recognition.lang = 'ru-RU'; recognition.interimResults = false; recognition.onstart = () => { taskInput.placeholder = "Слушаю..."; actionBtn.style.transform = "scale(1.1)"; }; recognition.onend = () => { taskInput.placeholder = "Пиши или диктуй задачу..."; actionBtn.style.transform = "scale(1)"; }; recognition.onresult = (e) => { taskInput.value += (taskInput.value ? ' ' : '') + e.results[0][0].transcript; updateButtonState(); }; } actionBtn.addEventListener('click', () => { if (taskInput.value.trim().length > 0) { addTaskFromInput(); } else { if (recognition) { try { recognition.start(); } catch(e) {} } else { alert("Голос не поддерживается."); } } });
+       // --- УМНЫЙ ГОЛОСОВОЙ ПОМОЩНИК ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
+        let recognition = null; 
+        
+        if (SpeechRecognition) { 
+            recognition = new SpeechRecognition(); 
+            recognition.lang = 'ru-RU'; 
+            recognition.interimResults = false; 
+            
+            recognition.onstart = () => { 
+                taskInput.placeholder = "Слушаю (назови день или время)..."; 
+                actionBtn.style.transform = "scale(1.1)"; 
+            }; 
+            
+            recognition.onend = () => { 
+                taskInput.placeholder = "Пиши или диктуй задачу..."; 
+                actionBtn.style.transform = "scale(1)"; 
+            }; 
+            
+            recognition.onresult = (e) => { 
+                let rawText = e.results[0][0].transcript.toLowerCase();
+                
+                let taskDate = new Date();
+                let hasDate = false;
+
+                // 1. Ищем ключевые слова дней
+                if (rawText.includes('завтра')) { taskDate.setDate(taskDate.getDate() + 1); rawText = rawText.replace('завтра', ''); hasDate = true; }
+                else if (rawText.includes('послезавтра')) { taskDate.setDate(taskDate.getDate() + 2); rawText = rawText.replace('послезавтра', ''); hasDate = true; }
+                else if (rawText.includes('сегодня')) { rawText = rawText.replace('сегодня', ''); hasDate = true; }
+                else {
+                    const days = ['в воскресенье', 'в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу', 'воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+                    const dayIdx = [0, 1, 2, 3, 4, 5, 6, 0, 1, 2, 3, 4, 5, 6];
+                    for (let i = 0; i < days.length; i++) {
+                        if (rawText.includes(days[i])) {
+                            let targetDay = dayIdx[i];
+                            let currentDay = taskDate.getDay();
+                            let diff = targetDay - currentDay;
+                            if (diff <= 0) diff += 7; // Перенос на следующую неделю
+                            taskDate.setDate(taskDate.getDate() + diff);
+                            rawText = rawText.replace(days[i], '');
+                            hasDate = true;
+                            break;
+                        }
+                    }
+                }
+
+                // 2. Ищем время (например: "в 15 часов", "на 12:30", "в 10")
+                const timeMatch = rawText.match(/(?:в|на)\s*(\d{1,2})(?:\s*часов|\s*:\s*(\d{2})|\s*минут|)/);
+                if (timeMatch) {
+                    let h = parseInt(timeMatch[1]);
+                    let m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+                    taskDate.setHours(h, m, 0, 0);
+                    rawText = rawText.replace(timeMatch[0], '');
+                    hasDate = true;
+                } else if (hasDate) {
+                    // Если день сказали, а время нет — ставим на 10:00 утра по умолчанию
+                    taskDate.setHours(10, 0, 0, 0); 
+                }
+
+                // 3. Очищаем текст от мусора и делаем первую букву большой
+                let cleanText = rawText.replace(/\s+/g, ' ').trim();
+                if(cleanText) cleanText = cleanText[0].toUpperCase() + cleanText.slice(1);
+
+                // Если текст вообще исчез (сказал только "завтра"), оставляем как было
+                taskInput.value = cleanText || e.results[0][0].transcript;
+                
+                // 4. Если ассистент нашел дату, автоматически привязываем её к задаче
+                if (hasDate) {
+                    // Корректируем часовой пояс для правильного сохранения
+                    taskDate.setMinutes(taskDate.getMinutes() - taskDate.getTimezoneOffset());
+                    document.getElementById('taskTime').value = taskDate.toISOString().slice(0,16);
+                    document.getElementById('calTriggerIcon').style.color = '#a855f7'; // Подсвечиваем календарь фиолетовым
+                }
+                
+                updateButtonState(); 
+            }; 
+        } 
+        
+        actionBtn.addEventListener('click', () => { 
+            if (taskInput.value.trim().length > 0) { 
+                addTaskFromInput(); 
+            } else { 
+                if (recognition) { 
+                    try { recognition.start(); } catch(e) {} 
+                } else { 
+                    alert("Голос не поддерживается вашим браузером."); 
+                } 
+            } 
+        });
         
         let currentEditIndex = null; 
         window.openEditModal = function(i) { 
