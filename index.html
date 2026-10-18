@@ -667,6 +667,73 @@
             
             recognition.onresult = (e) => { 
                 let rawText = e.results[0][0].transcript.toLowerCase();
+                let taskDate = new Date();
+                let hasDate = false;
+                let hasTime = false;
+
+                // 1. Ищем дни недели (по корням слов, чтобы понимать "в среду", "на пятницу")
+                const dayRoots = [
+                    { root: 'сегодня', offset: 0 },
+                    { root: 'послезавтра', offset: 2 },
+                    { root: 'завтра', offset: 1 }
+                ];
+                
+                for (let d of dayRoots) {
+                    if (rawText.includes(d.root)) {
+                        taskDate.setDate(taskDate.getDate() + d.offset);
+                        rawText = rawText.replace(new RegExp('(?:в|на|во)?\\s*' + d.root, 'g'), '');
+                        hasDate = true;
+                        break;
+                    }
+                }
+
+                if (!hasDate) {
+                    const weekDays = ['воскрес', 'понедельник', 'вторник', 'сред', 'четверг', 'пятниц', 'суббот'];
+                    for (let i = 0; i < weekDays.length; i++) {
+                        if (rawText.includes(weekDays[i])) {
+                            let currentDay = taskDate.getDay();
+                            let diff = i - currentDay;
+                            if (diff <= 0) diff += 7; // Ставим на следующую неделю
+                            taskDate.setDate(taskDate.getDate() + diff);
+                            rawText = rawText.replace(new RegExp('(?:в|на|во)?\\s*' + weekDays[i] + '[а-я]*', 'g'), '');
+                            hasDate = true;
+                            break;
+                        }
+                    }
+                }
+
+                // 2. Ищем время ("в 15:30", "на 9", "в 14 00", "в 18 часов")
+                const timeMatch = rawText.match(/(?:в|на|к)\s*(\d{1,2})(?:[:\.\-\s]*(\d{2}))?(?:\s*часов|\s*минут)?/);
+                if (timeMatch) {
+                    let h = parseInt(timeMatch[1]);
+                    let m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+                    if (h >= 0 && h <= 23) {
+                        taskDate.setHours(h, m, 0, 0);
+                        rawText = rawText.replace(timeMatch[0], '');
+                        hasDate = true;
+                        hasTime = true;
+                    }
+                }
+
+                if (hasDate && !hasTime) {
+                    taskDate.setHours(10, 0, 0, 0); // По умолчанию 10 утра, если время не сказали
+                }
+
+                // 3. Очищаем текст от лишних пробелов и делаем первую букву большой
+                let cleanText = rawText.replace(/\s+/g, ' ').trim();
+                if(cleanText) cleanText = cleanText[0].toUpperCase() + cleanText.slice(1);
+
+                taskInput.value = cleanText || e.results[0][0].transcript;
+                
+                // 4. Правильно передаем дату в скрытый календарь (Flatpickr)
+                if (hasDate) {
+                    mainDatePicker.setDate(taskDate); // Отправляем объект даты напрямую!
+                    document.getElementById('calTriggerIcon').style.color = '#a855f7'; 
+                }
+                
+                updateButtonState(); 
+            };
+                let rawText = e.results[0][0].transcript.toLowerCase();
                 
                 let taskDate = new Date();
                 let hasDate = false;
