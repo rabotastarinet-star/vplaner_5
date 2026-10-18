@@ -665,7 +665,85 @@
                 actionBtn.style.transform = "scale(1)"; 
             }; 
             
-            recognition.onresult = (e) => { 
+           recognition.onresult = (e) => { 
+                let rawText = e.results[0][0].transcript.toLowerCase();
+                
+                // Исправляем особенности гугловского распознавания (меняем "ноль ноль" на цифры)
+                rawText = rawText.replace(/ноль\s*ноль/g, '00');
+                
+                let taskDate = new Date();
+                let hasDate = false;
+                let hasTime = false;
+
+                // 1. Ищем простые слова-дни (вырезаем их сразу вместе с предлогами)
+                const dayRoots = [
+                    { root: 'сегодня', offset: 0 },
+                    { root: 'послезавтра', offset: 2 },
+                    { root: 'завтра', offset: 1 }
+                ];
+                
+                for (let d of dayRoots) {
+                    if (rawText.includes(d.root)) {
+                        taskDate.setDate(taskDate.getDate() + d.offset);
+                        rawText = rawText.replace(new RegExp('(?:на|в|во|к|до)?\\s*' + d.root + '\\b', 'g'), '');
+                        hasDate = true;
+                        break;
+                    }
+                }
+
+                if (!hasDate) {
+                    // 2. Ищем дни недели по корню (чтобы понимать падежи: в пятницу, к среде)
+                    const weekDays = ['воскрес', 'понедельник', 'вторник', 'сред', 'четверг', 'пятниц', 'суббот'];
+                    for (let i = 0; i < weekDays.length; i++) {
+                        if (rawText.includes(weekDays[i])) {
+                            let currentDay = taskDate.getDay();
+                            let diff = i - currentDay;
+                            if (diff <= 0) diff += 7; // Перенос на следующую неделю
+                            taskDate.setDate(taskDate.getDate() + diff);
+                            
+                            // Жестко вырезаем день недели с предлогами и словами "следующая/эта"
+                            rawText = rawText.replace(new RegExp('(?:в|на|во|к|до)?\\s*(?:следующий|следующую|эту|этот|в этот|на этот)?\\s*' + weekDays[i] + '[а-я]*', 'g'), '');
+                            hasDate = true;
+                            break;
+                        }
+                    }
+                }
+
+                // 3. Супер-поиск времени (разные форматы: "в 15:30", "в 15 30", "на 9", "18:00", "к 10 часам")
+                const timeRegex = /(?:в|на|к)\s*(\d{1,2})[:\.\-\s]*(\d{2})\b(?:\s*часа|\s*часов|\s*минут)?|(?:в|на|к)\s+(\d{1,2})(?:\s*часа|\s*часов)?|(\d{1,2})[:\.\-](\d{2})\b/i;
+                const timeMatch = rawText.match(timeRegex);
+                
+                if (timeMatch) {
+                    let h = parseInt(timeMatch[1] || timeMatch[3] || timeMatch[4]);
+                    let m = parseInt(timeMatch[2] || timeMatch[5] || "0");
+                    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+                        taskDate.setHours(h, m, 0, 0);
+                        rawText = rawText.replace(timeMatch[0], '');
+                        hasDate = true;
+                        hasTime = true;
+                    }
+                }
+
+                if (hasDate && !hasTime) {
+                    taskDate.setHours(10, 0, 0, 0); // По умолчанию ставим на 10:00 утра, если время не сказали
+                }
+
+                // 4. Финальная чистка текста задачи (убираем висящие в конце предлоги и лишние пробелы)
+                let cleanText = rawText.replace(/\b(в|на|к|до)\b\s*$/g, '').replace(/\s+/g, ' ').trim();
+                if(cleanText) cleanText = cleanText[0].toUpperCase() + cleanText.slice(1);
+
+                // ВАЖНО: Больше никакого возврата старого текста! 
+                // Если юзер сказал ТОЛЬКО дату, поле ввода останется пустым, но календарик запомнит день.
+                taskInput.value = cleanText;
+                
+                // 5. Вставляем найденную дату прямо в календарь
+                if (hasDate) {
+                    mainDatePicker.setDate(taskDate); 
+                    document.getElementById('calTriggerIcon').style.color = '#a855f7'; 
+                }
+                
+                updateButtonState(); 
+            };
                 let rawText = e.results[0][0].transcript.toLowerCase();
                 let taskDate = new Date();
                 let hasDate = false;
