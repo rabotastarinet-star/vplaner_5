@@ -20,7 +20,7 @@
     <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
     
     <style>
-        /* БАЗОВЫЕ СТИЛИ И ЗАЩИТА ОТ СЛУЧАЙНОГО ВЫДЕЛЕНИЯ НА ANDROID */
+        /* БАЗОВЫЕ СТИЛИ И ЗАЩИТА ОТ ВЫДЕЛЕНИЯ */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
         input, textarea { -webkit-user-select: auto; user-select: auto; }
         body { background-color: #1a1a2e; background-size: cover; background-position: center; background-attachment: fixed; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; transition: background-image 0.5s ease-in-out; }
@@ -90,7 +90,7 @@
         .cal-day.selected { border: 2px solid #a855f7; }
         .cal-day .dot { width: 6px; height: 6px; background: #fca5a5; border-radius: 50%; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); }
 
-        /* ФИНАНСЫ */
+        /* ФИНАНСЫ И АВТО */
         .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
         .dash-card { background: rgba(30, 25, 50, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.15s; cursor: pointer; min-height: 100px; }
         .dash-card:active { transform: scale(0.95); border-color: #a855f7; }
@@ -111,8 +111,6 @@
         .btn-mini-del:active { transform: scale(0.9); }
         .btn-export-finance { width: 100%; background: #34d399; color: #000; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(52, 211, 153, 0.4); transition: transform 0.15s; }
         .btn-export-finance:active { transform: scale(0.97); }
-
-        /* БОРТЖУРНАЛ АВТО */
         .auto-input-card { background: rgba(30, 25, 50, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 15px; margin-bottom: 20px; transition: 0.2s; }
         .auto-input-card input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; outline: none; }
         .btn-add-auto { width: 100%; background: #a855f7; border: none; padding: 12px; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; margin-top: 5px; transition: 0.15s; }
@@ -124,8 +122,6 @@
         .maintenance-bar { width: 100%; background: rgba(0,0,0,0.5); height: 6px; border-radius: 3px; margin-top: 5px; overflow: hidden; }
         .maintenance-fill { height: 100%; background: #34d399; transition: width 0.5s ease, background 0.5s; }
         .service-chk { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 14px; color: #d8b4fe; }
-
-        /* СТАТИСТИКА */
         .stats-wrap { display: flex; align-items: flex-end; justify-content: space-around; height: 250px; margin-top: 20px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
         .stat-bar-container { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 45px; }
         .stat-bar { width: 100%; background: linear-gradient(to top, #7e22ce, #a855f7); border-radius: 6px 6px 0 0; transition: height 0.5s ease; min-height: 5px; box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
@@ -143,13 +139,11 @@
         .note-widget p { font-size: 14px; opacity: 0.9; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; word-break: break-word; }
         .note-actions { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 10px; }
         .note-actions span { font-size: 20px; opacity: 0.7; cursor: pointer; transition: 0.1s; }
-        .note-actions span:active { transform: scale(0.85); }
         .note-actions .share-note { color: #34d399; } .note-actions .del-note { color: #f87171; }
 
         /* ФОНЫ */
         .custom-bg-section { margin-bottom: 20px; }
         .custom-bg-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(30, 25, 50, 0.65); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; backdrop-filter: blur(10px); color: #d8b4fe; font-weight: 500; width: 100%; justify-content: center; transition: 0.15s; }
-        .custom-bg-btn:active { transform: scale(0.97); }
         .bg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .bg-item { height: 120px; border-radius: 12px; background-size: cover; background-position: center; cursor: pointer; border: 3px solid transparent; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
         .bg-item.active { border-color: #a855f7; transform: scale(1.05); }
@@ -162,13 +156,11 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .modal-header h3 { font-size: 18px; font-weight: 500; }
         .close-modal-btn { background: none; border: none; color: #bbb; font-size: 24px; cursor: pointer; padding: 5px; transition: 0.1s; }
-        .close-modal-btn:active { transform: scale(0.8); }
         .form-row { margin-bottom: 15px; }
         .form-row label { display: block; font-size: 13px; color: #bbb; margin-bottom: 5px; }
         .form-row input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; outline: none; font-size: 16px; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
         .modal-actions button { padding: 10px 18px; border-radius: 8px; border: none; font-size: 15px; cursor: pointer; font-weight: 500; transition: 0.1s; }
-        .modal-actions button:active { transform: scale(0.95); }
         .btn-cancel { background: rgba(255,255,255,0.1); color: #fff; }
         .btn-save { background: #a855f7; color: #fff; }
         .modal-content textarea { width: 100%; padding: 12px; border-radius: 10px; border: none; background: rgba(0,0,0,0.3); color: #fff; font-size: 16px; margin-bottom: 15px; resize: none; outline: none; height: 120px; }
@@ -421,7 +413,7 @@
     <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
 
     <script>
-        // --- 0. НАВИГАЦИЯ И КНОПКА "НАЗАД" (HISTORY API) ---
+        // --- 0. НАВИГАЦИЯ И КНОПКА "НАЗАД" ---
         function handleNavigation() {
             let hash = window.location.hash.replace('#', '');
             let isModal = hash.includes('-modal'); let isMenu = hash.includes('-menu');
@@ -466,7 +458,7 @@
         if(localStorage.getItem('biometricsEnabled') === 'true') { localStorage.setItem('authMethod', 'fingerprint'); localStorage.removeItem('biometricsEnabled'); }
         let authMethod = localStorage.getItem('authMethod') || 'none'; let savedPin = localStorage.getItem('savedPin') || '0000'; let currentEnteredPin = "";
         function initAuth() { const ls = document.getElementById('lockScreen'); if (authMethod === 'none') { ls.classList.add('hidden'); } else if (authMethod === 'pin') { ls.classList.remove('hidden'); document.getElementById('pinPad').style.display = 'grid'; document.getElementById('pinDots').style.display = 'flex'; document.getElementById('fingerprintOnly').style.display = 'none'; document.getElementById('bioBtnFallback').style.display = 'flex'; updatePinDots(); } else if (authMethod === 'fingerprint') { ls.classList.remove('hidden'); document.getElementById('pinPad').style.display = 'none'; document.getElementById('pinDots').style.display = 'none'; document.getElementById('fingerprintOnly').style.display = 'block'; setTimeout(tryBiometrics, 500); } document.querySelectorAll('input[name="authMethod"]').forEach(el => { if(el.value === authMethod) el.checked = true; }); document.getElementById('pinSetupBlock').style.display = authMethod === 'pin' ? 'block' : 'none'; }
-        function changeAuthMethod() { authMethod = document.querySelector('input[name="authMethod"]:checked').value; localStorage.setItem('authMethod', authMethod); document.getElementById('pinSetupBlock').style.display = authMethod === 'pin' ? 'block' : 'none'; if(authMethod === 'fingerprint') alert("Убедитесь, что телефон поддерживает WebAuthn. Иначе используйте ПИН."); }
+        function changeAuthMethod() { authMethod = document.querySelector('input[name="authMethod"]:checked').value; localStorage.setItem('authMethod', authMethod); document.getElementById('pinSetupBlock').style.display = authMethod === 'pin' ? 'block' : 'none'; if(authMethod === 'fingerprint') alert("Убедитесь, что телефон поддерживает WebAuthn."); }
         function saveNewPin() { let p = document.getElementById('newPinInput').value; if(p.length >= 4) { localStorage.setItem('savedPin', p); savedPin = p; alert("ПИН сохранен!"); } else { alert("Минимум 4 цифры."); } }
         function enterPin(num) { if(currentEnteredPin.length < 4) currentEnteredPin += num; updatePinDots(); if(currentEnteredPin.length === 4) { setTimeout(() => { if(currentEnteredPin === savedPin) { document.getElementById('lockScreen').classList.add('hidden'); currentEnteredPin = ""; } else { alert("Неверный ПИН"); currentEnteredPin = ""; updatePinDots(); } }, 200); } }
         function clearPin() { currentEnteredPin = currentEnteredPin.slice(0, -1); updatePinDots(); }
@@ -475,31 +467,10 @@
         let unlockClicks = 0; let unlockTimer; window.emergencyUnlock = function() { unlockClicks++; clearTimeout(unlockTimer); unlockTimer = setTimeout(() => unlockClicks = 0, 1500); if(unlockClicks >= 5) { localStorage.setItem('authMethod', 'none'); authMethod = 'none'; document.getElementById('lockScreen').classList.add('hidden'); alert("Защита снята!"); } };
 
         window.exportData = async function() {
-            const allData = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                allData[key] = localStorage.getItem(key);
-            }
-            const dateStr = new Date().toLocaleDateString('ru-RU').replace(/\./g, '-');
-            const blob = new Blob([JSON.stringify(allData)], { type: 'text/plain' });
-            const file = new File([blob], `vplaner_backup_${dateStr}.txt`, { type: 'text/plain' });
-
-            const downloadFallback = () => {
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = file.name;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                closeOverlay();
-            };
-
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({ title: 'Резервная копия VPlaner', files: [file] });
-                    closeOverlay();
-                } catch (e) { downloadFallback(); }
-            } else { downloadFallback(); }
+            const allData = {}; for (let i = 0; i < localStorage.length; i++) { const key = localStorage.key(i); allData[key] = localStorage.getItem(key); }
+            const blob = new Blob([JSON.stringify(allData)], { type: 'text/plain' }); const file = new File([blob], `vplaner_backup_${new Date().toLocaleDateString('ru-RU').replace(/\./g, '-')}.txt`, { type: 'text/plain' });
+            const downloadFallback = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); closeOverlay(); };
+            if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ title: 'Резервная копия VPlaner', files: [file] }); closeOverlay(); } catch (e) { downloadFallback(); } } else { downloadFallback(); }
         };
         window.importData = function(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = function(ev) { try { const data = JSON.parse(ev.target.result); for (const key in data) { localStorage.setItem(key, data[key]); } alert("Восстановлено!"); location.reload(); } catch(err) { alert("Ошибка файла!"); } }; r.readAsText(f); closeOverlay(); };
         function shareContent(title, text) { if (navigator.share) { navigator.share({ title: title, text: text }).catch(() => {}); } else { navigator.clipboard.writeText(title + "\n\n" + text).then(() => alert("Скопировано в буфер")); } }
@@ -511,13 +482,8 @@
 
         function requestNotificationPerm() { 
             if ("Notification" in window) { 
-                if (Notification.permission === "granted") {
-                    document.querySelector('header .material-symbols-outlined:last-child').style.color = '#34d399';
-                } else {
-                    Notification.requestPermission().then(p => { 
-                        if(p === "granted") document.querySelector('header .material-symbols-outlined:last-child').style.color = '#34d399';
-                    }); 
-                }
+                if (Notification.permission === "granted") { document.querySelector('header .material-symbols-outlined:last-child').style.color = '#34d399'; } 
+                else { Notification.requestPermission().then(p => { if(p === "granted") document.querySelector('header .material-symbols-outlined:last-child').style.color = '#34d399'; }); }
             } 
         }
 
@@ -529,9 +495,7 @@
                     const taskTime = new Date(t.time); 
                     if (taskTime <= now) { 
                         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                            navigator.serviceWorker.ready.then(reg => {
-                                reg.showNotification("VPlaner: Пора!", { body: t.text, icon: 'icon.png', vibrate: [200, 100, 200] });
-                            });
+                            navigator.serviceWorker.ready.then(reg => { reg.showNotification("VPlaner: Пора!", { body: t.text, icon: 'icon.png', vibrate: [200, 100, 200] }); });
                         } else {
                             new Notification("VPlaner: Пора!", { body: t.text, icon: 'icon.png' }); 
                         }
@@ -545,54 +509,37 @@
 
         let currentWeekOffset = 0;
         function getWeekBounds() { 
-            let curr = new Date(); 
-            curr.setDate(curr.getDate() + (currentWeekOffset * 7)); 
+            let curr = new Date(); curr.setDate(curr.getDate() + (currentWeekOffset * 7)); 
             let first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1); 
-            let start = new Date(curr.setDate(first)); 
-            start.setHours(0,0,0,0); 
-            let end = new Date(start); 
-            end.setDate(start.getDate() + 6); 
-            end.setHours(23,59,59,999); 
+            let start = new Date(curr.setDate(first)); start.setHours(0,0,0,0); 
+            let end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999); 
             return {start, end}; 
         }
 
-        function changeWeek(dir) {
-            currentWeekOffset += dir;
-            renderTasksWeek();
-        }
+        function changeWeek(dir) { currentWeekOffset += dir; renderTasksWeek(); }
 
         function renderTasksWeek() { 
-            const containerWeek = document.getElementById('tasksCurrentWeek'); 
-            containerWeek.innerHTML = ''; 
-            const containerNoDate = document.getElementById('tasksNoDate'); 
-            containerNoDate.innerHTML = ''; 
-            const bounds = getWeekBounds(); 
-            const now = new Date(); 
+            const containerWeek = document.getElementById('tasksCurrentWeek'); containerWeek.innerHTML = ''; 
+            const containerNoDate = document.getElementById('tasksNoDate'); containerNoDate.innerHTML = ''; 
+            const bounds = getWeekBounds(); const now = new Date(); 
             
             let headerEl = document.getElementById('headerTitle');
             if (currentWeekOffset === 0) headerEl.innerText = "Задачи на неделю";
             else if (currentWeekOffset === 1) headerEl.innerText = "Следующая неделя";
             else if (currentWeekOffset === -1) headerEl.innerText = "Прошлая неделя";
-            else {
-                let fmt = (d) => d.toLocaleDateString('ru-RU', {day: 'numeric', month: 'short'});
-                headerEl.innerText = `${fmt(bounds.start)} - ${fmt(bounds.end)}`;
-            }
+            else { let fmt = (d) => d.toLocaleDateString('ru-RU', {day: 'numeric', month: 'short'}); headerEl.innerText = `${fmt(bounds.start)} - ${fmt(bounds.end)}`; }
 
             let hasWeek = false; let hasNoDate = false; 
             let sorted = [...tasks].sort((a, b) => { if(!a.time) return 1; if(!b.time) return -1; return new Date(a.time) - new Date(b.time); }); 
             sorted.forEach((task) => { 
-                const origIndex = tasks.indexOf(task); 
-                let html = ''; 
+                const origIndex = tasks.indexOf(task); let html = ''; 
                 if(task.time) { 
                     let d = new Date(task.time); 
                     if(d >= bounds.start && d <= bounds.end) { 
                         hasWeek = true; 
                         let tStr = d.toLocaleDateString('ru-RU', {weekday: 'short', day: 'numeric'}) + ' ' + d.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'}); 
                         let statusClass = ''; 
-                        if (!task.done) { 
-                            if (d < now) statusClass = 'overdue'; 
-                            else if ((d - now) < 12*60*60*1000) statusClass = 'soon'; 
-                        } 
+                        if (!task.done) { if (d < now) statusClass = 'overdue'; else if ((d - now) < 12*60*60*1000) statusClass = 'soon'; } 
                         html = `<div class="task-card ${statusClass} ${task.done ? 'done' : ''}"><div class="checkbox ${task.done ? 'checked' : ''}" onclick="toggleTask(${origIndex})"></div><div class="task-info"><div class="task-title">${task.text}</div><div class="task-time">${tStr}</div></div><div class="task-actions"><span class="material-symbols-outlined share-icon" onclick="shareTask(${origIndex})">share</span><span class="material-symbols-outlined edit-icon" onclick="openEditModal(${origIndex})">edit</span><span class="material-symbols-outlined del-icon" onclick="deleteTask(${origIndex})">delete</span></div></div>`; 
                         containerWeek.innerHTML += html; 
                     } 
@@ -614,9 +561,7 @@
         tContainer.addEventListener('touchend', e => {
             let tEndX = e.changedTouches[0].screenX; let tEndY = e.changedTouches[0].screenY;
             let xDiff = tEndX - tStartX; let yDiff = tEndY - tStartY;
-            if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 60) {
-                if (xDiff < 0) changeWeek(1); else changeWeek(-1); 
-            }
+            if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 60) { if (xDiff < 0) changeWeek(1); else changeWeek(-1); }
         }, {passive: true});
 
         window.toggleTask = function(i) { tasks[i].done = !tasks[i].done; saveAndRender(); }; 
@@ -635,8 +580,7 @@
         };
 
         function addTaskFromInput() { 
-            let text = taskInput.value.trim(); 
-            if(!text) return; 
+            let text = taskInput.value.trim(); if(!text) return; 
             tasks.push({ text: text, time: document.getElementById('taskTime').value, done: false, notified: false, remind: currentReminderState }); 
             taskInput.value = ''; mainDatePicker.clear(); document.getElementById('calTriggerIcon').style.color = '#d8b4fe'; 
             currentReminderState = true; document.getElementById('reminderToggleIcon').innerText = 'notifications_active'; document.getElementById('reminderToggleIcon').style.color = '#a855f7';
@@ -646,7 +590,7 @@
         taskInput.addEventListener('input', updateButtonState); taskInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') addTaskFromInput(); }); 
         function updateButtonState() { if (taskInput.value.trim().length > 0) { actionIcon.innerText = 'send'; actionBtn.classList.remove('mic'); } else { actionIcon.innerText = 'mic'; actionBtn.classList.add('mic'); } }
 
-       // --- УМНЫЙ ГОЛОСОВОЙ ПОМОЩНИК ---
+        // --- УМНЫЙ ГОЛОСОВОЙ ПОМОЩНИК ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
         let recognition = null; 
         
@@ -655,232 +599,70 @@
             recognition.lang = 'ru-RU'; 
             recognition.interimResults = false; 
             
-            recognition.onstart = () => { 
-                taskInput.placeholder = "Слушаю (назови день или время)..."; 
-                actionBtn.style.transform = "scale(1.1)"; 
-            }; 
+            recognition.onstart = () => { taskInput.placeholder = "Слушаю (день или время)..."; actionBtn.style.transform = "scale(1.1)"; }; 
+            recognition.onend = () => { taskInput.placeholder = "Пиши или диктуй задачу..."; actionBtn.style.transform = "scale(1)"; }; 
             
-            recognition.onend = () => { 
-                taskInput.placeholder = "Пиши или диктуй задачу..."; 
-                actionBtn.style.transform = "scale(1)"; 
-            }; 
-            
-           recognition.onresult = (e) => { 
+            recognition.onresult = (e) => { 
                 let rawText = e.results[0][0].transcript.toLowerCase();
-                
-                // Исправляем особенности гугловского распознавания (меняем "ноль ноль" на цифры)
                 rawText = rawText.replace(/ноль\s*ноль/g, '00');
                 
-                let taskDate = new Date();
-                let hasDate = false;
-                let hasTime = false;
+                let taskDate = new Date(); let hasDate = false; let hasTime = false;
 
-                // 1. Ищем простые слова-дни (вырезаем их сразу вместе с предлогами)
-                const dayRoots = [
-                    { root: 'сегодня', offset: 0 },
-                    { root: 'послезавтра', offset: 2 },
-                    { root: 'завтра', offset: 1 }
-                ];
-                
+                const dayRoots = [{ root: 'сегодня', offset: 0 }, { root: 'послезавтра', offset: 2 }, { root: 'завтра', offset: 1 }];
                 for (let d of dayRoots) {
                     if (rawText.includes(d.root)) {
                         taskDate.setDate(taskDate.getDate() + d.offset);
                         rawText = rawText.replace(new RegExp('(?:на|в|во|к|до)?\\s*' + d.root + '\\b', 'g'), '');
-                        hasDate = true;
-                        break;
+                        hasDate = true; break;
                     }
                 }
 
                 if (!hasDate) {
-                    // 2. Ищем дни недели по корню (чтобы понимать падежи: в пятницу, к среде)
                     const weekDays = ['воскрес', 'понедельник', 'вторник', 'сред', 'четверг', 'пятниц', 'суббот'];
                     for (let i = 0; i < weekDays.length; i++) {
                         if (rawText.includes(weekDays[i])) {
                             let currentDay = taskDate.getDay();
                             let diff = i - currentDay;
-                            if (diff <= 0) diff += 7; // Перенос на следующую неделю
+                            if (diff <= 0) diff += 7;
                             taskDate.setDate(taskDate.getDate() + diff);
-                            
-                            // Жестко вырезаем день недели с предлогами и словами "следующая/эта"
                             rawText = rawText.replace(new RegExp('(?:в|на|во|к|до)?\\s*(?:следующий|следующую|эту|этот|в этот|на этот)?\\s*' + weekDays[i] + '[а-я]*', 'g'), '');
-                            hasDate = true;
-                            break;
+                            hasDate = true; break;
                         }
                     }
                 }
 
-                // 3. Супер-поиск времени (разные форматы: "в 15:30", "в 15 30", "на 9", "18:00", "к 10 часам")
                 const timeRegex = /(?:в|на|к)\s*(\d{1,2})[:\.\-\s]*(\d{2})\b(?:\s*часа|\s*часов|\s*минут)?|(?:в|на|к)\s+(\d{1,2})(?:\s*часа|\s*часов)?|(\d{1,2})[:\.\-](\d{2})\b/i;
                 const timeMatch = rawText.match(timeRegex);
-                
                 if (timeMatch) {
                     let h = parseInt(timeMatch[1] || timeMatch[3] || timeMatch[4]);
                     let m = parseInt(timeMatch[2] || timeMatch[5] || "0");
                     if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
                         taskDate.setHours(h, m, 0, 0);
                         rawText = rawText.replace(timeMatch[0], '');
-                        hasDate = true;
-                        hasTime = true;
+                        hasDate = true; hasTime = true;
                     }
                 }
 
-                if (hasDate && !hasTime) {
-                    taskDate.setHours(10, 0, 0, 0); // По умолчанию ставим на 10:00 утра, если время не сказали
-                }
+                if (hasDate && !hasTime) { taskDate.setHours(10, 0, 0, 0); }
 
-                // 4. Финальная чистка текста задачи (убираем висящие в конце предлоги и лишние пробелы)
                 let cleanText = rawText.replace(/\b(в|на|к|до)\b\s*$/g, '').replace(/\s+/g, ' ').trim();
                 if(cleanText) cleanText = cleanText[0].toUpperCase() + cleanText.slice(1);
 
-                // ВАЖНО: Больше никакого возврата старого текста! 
-                // Если юзер сказал ТОЛЬКО дату, поле ввода останется пустым, но календарик запомнит день.
                 taskInput.value = cleanText;
                 
-                // 5. Вставляем найденную дату прямо в календарь
                 if (hasDate) {
                     mainDatePicker.setDate(taskDate); 
                     document.getElementById('calTriggerIcon').style.color = '#a855f7'; 
                 }
-                
-                updateButtonState(); 
-            };
-                let rawText = e.results[0][0].transcript.toLowerCase();
-                let taskDate = new Date();
-                let hasDate = false;
-                let hasTime = false;
-
-                // 1. Ищем дни недели (по корням слов, чтобы понимать "в среду", "на пятницу")
-                const dayRoots = [
-                    { root: 'сегодня', offset: 0 },
-                    { root: 'послезавтра', offset: 2 },
-                    { root: 'завтра', offset: 1 }
-                ];
-                
-                for (let d of dayRoots) {
-                    if (rawText.includes(d.root)) {
-                        taskDate.setDate(taskDate.getDate() + d.offset);
-                        rawText = rawText.replace(new RegExp('(?:в|на|во)?\\s*' + d.root, 'g'), '');
-                        hasDate = true;
-                        break;
-                    }
-                }
-
-                if (!hasDate) {
-                    const weekDays = ['воскрес', 'понедельник', 'вторник', 'сред', 'четверг', 'пятниц', 'суббот'];
-                    for (let i = 0; i < weekDays.length; i++) {
-                        if (rawText.includes(weekDays[i])) {
-                            let currentDay = taskDate.getDay();
-                            let diff = i - currentDay;
-                            if (diff <= 0) diff += 7; // Ставим на следующую неделю
-                            taskDate.setDate(taskDate.getDate() + diff);
-                            rawText = rawText.replace(new RegExp('(?:в|на|во)?\\s*' + weekDays[i] + '[а-я]*', 'g'), '');
-                            hasDate = true;
-                            break;
-                        }
-                    }
-                }
-
-                // 2. Ищем время ("в 15:30", "на 9", "в 14 00", "в 18 часов")
-                const timeMatch = rawText.match(/(?:в|на|к)\s*(\d{1,2})(?:[:\.\-\s]*(\d{2}))?(?:\s*часов|\s*минут)?/);
-                if (timeMatch) {
-                    let h = parseInt(timeMatch[1]);
-                    let m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
-                    if (h >= 0 && h <= 23) {
-                        taskDate.setHours(h, m, 0, 0);
-                        rawText = rawText.replace(timeMatch[0], '');
-                        hasDate = true;
-                        hasTime = true;
-                    }
-                }
-
-                if (hasDate && !hasTime) {
-                    taskDate.setHours(10, 0, 0, 0); // По умолчанию 10 утра, если время не сказали
-                }
-
-                // 3. Очищаем текст от лишних пробелов и делаем первую букву большой
-                let cleanText = rawText.replace(/\s+/g, ' ').trim();
-                if(cleanText) cleanText = cleanText[0].toUpperCase() + cleanText.slice(1);
-
-                taskInput.value = cleanText || e.results[0][0].transcript;
-                
-                // 4. Правильно передаем дату в скрытый календарь (Flatpickr)
-                if (hasDate) {
-                    mainDatePicker.setDate(taskDate); // Отправляем объект даты напрямую!
-                    document.getElementById('calTriggerIcon').style.color = '#a855f7'; 
-                }
-                
-                updateButtonState(); 
-            };
-                let rawText = e.results[0][0].transcript.toLowerCase();
-                
-                let taskDate = new Date();
-                let hasDate = false;
-
-                // 1. Ищем ключевые слова дней
-                if (rawText.includes('завтра')) { taskDate.setDate(taskDate.getDate() + 1); rawText = rawText.replace('завтра', ''); hasDate = true; }
-                else if (rawText.includes('послезавтра')) { taskDate.setDate(taskDate.getDate() + 2); rawText = rawText.replace('послезавтра', ''); hasDate = true; }
-                else if (rawText.includes('сегодня')) { rawText = rawText.replace('сегодня', ''); hasDate = true; }
-                else {
-                    const days = ['в воскресенье', 'в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу', 'воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
-                    const dayIdx = [0, 1, 2, 3, 4, 5, 6, 0, 1, 2, 3, 4, 5, 6];
-                    for (let i = 0; i < days.length; i++) {
-                        if (rawText.includes(days[i])) {
-                            let targetDay = dayIdx[i];
-                            let currentDay = taskDate.getDay();
-                            let diff = targetDay - currentDay;
-                            if (diff <= 0) diff += 7; // Перенос на следующую неделю
-                            taskDate.setDate(taskDate.getDate() + diff);
-                            rawText = rawText.replace(days[i], '');
-                            hasDate = true;
-                            break;
-                        }
-                    }
-                }
-
-                // 2. Ищем время (например: "в 15 часов", "на 12:30", "в 10")
-                const timeMatch = rawText.match(/(?:в|на)\s*(\d{1,2})(?:\s*часов|\s*:\s*(\d{2})|\s*минут|)/);
-                if (timeMatch) {
-                    let h = parseInt(timeMatch[1]);
-                    let m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
-                    taskDate.setHours(h, m, 0, 0);
-                    rawText = rawText.replace(timeMatch[0], '');
-                    hasDate = true;
-                } else if (hasDate) {
-                    // Если день сказали, а время нет — ставим на 10:00 утра по умолчанию
-                    taskDate.setHours(10, 0, 0, 0); 
-                }
-
-                // 3. Очищаем текст от мусора и делаем первую букву большой
-                let cleanText = rawText.replace(/\s+/g, ' ').trim();
-                if(cleanText) cleanText = cleanText[0].toUpperCase() + cleanText.slice(1);
-
-                // Если текст вообще исчез (сказал только "завтра"), оставляем как было
-                taskInput.value = cleanText || e.results[0][0].transcript;
-                
-                // 4. Если ассистент нашел дату, автоматически привязываем её к задаче
-                if (hasDate) {
-                    // Корректируем часовой пояс для правильного сохранения
-                    taskDate.setMinutes(taskDate.getMinutes() - taskDate.getTimezoneOffset());
-                    document.getElementById('taskTime').value = taskDate.toISOString().slice(0,16);
-                    document.getElementById('calTriggerIcon').style.color = '#a855f7'; // Подсвечиваем календарь фиолетовым
-                }
-                
                 updateButtonState(); 
             }; 
         } 
         
         actionBtn.addEventListener('click', () => { 
-            if (taskInput.value.trim().length > 0) { 
-                addTaskFromInput(); 
-            } else { 
-                if (recognition) { 
-                    try { recognition.start(); } catch(e) {} 
-                } else { 
-                    alert("Голос не поддерживается вашим браузером."); 
-                } 
-            } 
+            if (taskInput.value.trim().length > 0) { addTaskFromInput(); } 
+            else { if (recognition) { try { recognition.start(); } catch(e) {} } else { alert("Голос не поддерживается вашим браузером."); } } 
         });
-        
+
         let currentEditIndex = null; 
         window.openEditModal = function(i) { 
             currentEditIndex = i; const t = tasks[i]; 
@@ -908,27 +690,12 @@
         
         function renderCalendarTasks(dStr) { 
             document.getElementById('selectedDateTitle').innerText = 'События на: ' + dStr; 
-            const ctList = document.getElementById('calendarTaskList'); 
-            ctList.innerHTML = ''; 
+            const ctList = document.getElementById('calendarTaskList'); ctList.innerHTML = ''; 
             const dTasks = tasks.filter(t => t.time && t.time.split('T')[0] === dStr); 
             if (dTasks.length === 0) { ctList.innerHTML = '<div style="color:#bbb;">Ничего нет.</div>'; return; } 
-            
             dTasks.forEach(t => { 
-                const origIndex = tasks.indexOf(t);
-                let tStr = new Date(t.time).toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
-                ctList.innerHTML += `
-                <div class="task-card ${t.done?'done':''}">
-                    <div class="checkbox ${t.done?'checked':''}" onclick="toggleTask(${origIndex})"></div>
-                    <div class="task-info">
-                        <div class="task-title">${t.text}</div>
-                        <div class="task-time">${tStr}</div>
-                    </div>
-                    <div class="task-actions">
-                        <span class="material-symbols-outlined share-icon" onclick="shareTask(${origIndex})">share</span>
-                        <span class="material-symbols-outlined edit-icon" onclick="openEditModal(${origIndex})">edit</span>
-                        <span class="material-symbols-outlined del-icon" onclick="deleteTask(${origIndex})">delete</span>
-                    </div>
-                </div>`; 
+                const origIndex = tasks.indexOf(t); let tStr = new Date(t.time).toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+                ctList.innerHTML += `<div class="task-card ${t.done?'done':''}"><div class="checkbox ${t.done?'checked':''}" onclick="toggleTask(${origIndex})"></div><div class="task-info"><div class="task-title">${t.text}</div><div class="task-time">${tStr}</div></div><div class="task-actions"><span class="material-symbols-outlined share-icon" onclick="shareTask(${origIndex})">share</span><span class="material-symbols-outlined edit-icon" onclick="openEditModal(${origIndex})">edit</span><span class="material-symbols-outlined del-icon" onclick="deleteTask(${origIndex})">delete</span></div></div>`; 
             }); 
         }
 
@@ -936,7 +703,7 @@
         let notesList = JSON.parse(localStorage.getItem('notesList')) || []; function renderNotes() { const grid = document.getElementById('notesGrid'); grid.innerHTML = ''; if (notesList.length === 0) { grid.innerHTML = '<div style="color:#ccc; grid-column: 1 / -1; text-align:center; padding: 20px;">Нет заметок.</div>'; return; } notesList.forEach(note => { grid.innerHTML += `<div class="note-widget" onclick="openNoteModal(${note.id})">${note.title ? `<h4>${note.title}</h4>` : ''}<p>${note.content}</p><div class="note-actions"><span class="material-symbols-outlined share-note" onclick="event.stopPropagation(); shareNote(${note.id})">share</span><span class="material-symbols-outlined del-note" onclick="event.stopPropagation(); deleteNote(${note.id})">delete</span></div></div>`; }); } let currentNoteId = null; window.openNoteModal = function(id = null) { currentNoteId = id; if (id !== null) { const note = notesList.find(n => n.id === id); document.getElementById('noteTitleInput').value = note.title; document.getElementById('noteContentInput').value = note.content; document.getElementById('noteModalTitle').innerText = 'Редактировать заметку'; } else { document.getElementById('noteTitleInput').value = ''; document.getElementById('noteContentInput').value = ''; document.getElementById('noteModalTitle').innerText = 'Новая заметка'; } openModalBase('noteModal'); }; window.saveNote = function() { const title = document.getElementById('noteTitleInput').value.trim(); const content = document.getElementById('noteContentInput').value.trim(); if (!content && !title) return closeOverlay(); if (currentNoteId !== null) { const note = notesList.find(n => n.id === currentNoteId); note.title = title; note.content = content; } else { notesList.push({ id: Date.now(), title: title, content: content }); } localStorage.setItem('notesList', JSON.stringify(notesList)); renderNotes(); closeOverlay(); }; window.deleteNote = function(id) { notesList = notesList.filter(n => n.id !== id); localStorage.setItem('notesList', JSON.stringify(notesList)); renderNotes(); }; window.shareNote = function(id) { const note = notesList.find(n => n.id === id); if (note) shareContent(note.title || 'Заметка', note.content); };
 
         // --- 7. БОРТЖУРНАЛ АВТО ---
-        let autoLogs = JSON.parse(localStorage.getItem('autoLogs')) || []; let autoSettings = JSON.parse(localStorage.getItem('autoSettings')) || { currentOdo: 0, lastOil: 0, lastGbo: 0, lastGrm: 0 }; function renderAutoStatus() { document.getElementById('globalOdo').value = autoSettings.currentOdo || ''; const alerts = document.getElementById('maintenanceAlerts'); alerts.innerHTML = ''; const odo = autoSettings.currentOdo || 0; if(odo === 0) { alerts.innerHTML = '<div style="color:#bbb; font-size:13px;">Введите текущий пробег, чтобы включить напоминания о ТО.</div>'; return; } alerts.innerHTML += createBar('Масло (10 тыс. км)', 10000, odo - (autoSettings.lastOil || odo), autoSettings.lastOil); alerts.innerHTML += createBar('Фильтры ГБО (10 тыс. км)', 10000, odo - (autoSettings.lastGbo || odo), autoSettings.lastGbo); alerts.innerHTML += createBar('ГРМ (60 тыс. км)', 60000, odo - (autoSettings.lastGrm || odo), autoSettings.lastGrm); } function createBar(name, limit, currentDist, isSet) { if(!isSet) return `<div style="margin-bottom: 8px; font-size: 13px; color: #bbb;">${name}: <span>Счетчик не запущен</span></div>`; const left = limit - currentDist; let pct = (currentDist / limit) * 100; if (pct > 100) pct = 100; let color = '#34d399'; let text = `Осталось ${left} км`; if (left <= 1000) color = '#fbbf24'; if (left <= 0) { color = '#f87171'; text = 'Требуется замена!'; } return `<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;"><span>${name}</span><span style="color: ${color}; font-weight: bold;">${text}</span></div><div class="maintenance-bar"><div class="maintenance-fill" style="width: ${pct}%; background: ${color};"></div></div></div>`; } window.updateGlobalOdo = function() { autoSettings.currentOdo = parseFloat(document.getElementById('globalOdo').value) || 0; localStorage.setItem('autoSettings', JSON.stringify(autoSettings)); renderAutoStatus(); }; document.getElementById('gasDate').valueAsDate = new Date(); document.getElementById('serviceDate').valueAsDate = new Date(); window.calcGas = function() { const km = parseFloat(document.getElementById('gasTrip').value) || 0; const gasL = parseFloat(document.getElementById('gasLiters').value) || 0; const petL = parseFloat(document.getElementById('petrolLiters').value) || 0; const sum = parseFloat(document.getElementById('gasSum').value) || 0; const res = document.getElementById('fuelCalcResult'); let txt = ''; if (km > 0) { if(gasL > 0) txt += `Расход газа: <span style="color:#fff">${((gasL/km)*100).toFixed(1)} л/100км</span><br>`; if(petL > 0) txt += `Расход бенз: <span style="color:#fff">${((petL/km)*100).toFixed(1)} л/100км</span><br>`; if(sum > 0) txt += `Цена поездки: <span style="color:#fff">${(sum/km).toFixed(2)} грн / 1 км</span>`; } res.innerHTML = txt || 'Введите дистанцию и литры...'; }; window.addGasLog = function() { const date = document.getElementById('gasDate').value; const km = document.getElementById('gasTrip').value; const gasL = document.getElementById('gasLiters').value; const petL = document.getElementById('petrolLiters').value; const sum = document.getElementById('gasSum').value; if(!km || (!gasL && !petL)) return alert("Введите пройденные км и топливо!"); autoLogs.unshift({ id: Date.now(), type: 'refuel', date, km, gasL, petL, sum, consGas: gasL ? ((parseFloat(gasL) / parseFloat(km)) * 100).toFixed(1) : 0, consPet: petL ? ((parseFloat(petL) / parseFloat(km)) * 100).toFixed(1) : 0 }); localStorage.setItem('autoLogs', JSON.stringify(autoLogs)); document.getElementById('gasTrip').value = ''; document.getElementById('gasLiters').value = ''; document.getElementById('petrolLiters').value = ''; document.getElementById('gasSum').value = ''; calcGas(); renderAutoLogs(); }; window.addServiceLog = function() { const date = document.getElementById('serviceDate').value; const odo = document.getElementById('serviceOdo').value; const desc = document.getElementById('serviceDesc').value; const sum = document.getElementById('serviceSum').value; if(!desc) return alert("Введите описание работы!"); autoLogs.unshift({ id: Date.now(), type: 'service', date, odo, desc, sum }); localStorage.setItem('autoLogs', JSON.stringify(autoLogs)); if(odo) { autoSettings.currentOdo = parseFloat(odo); if(document.getElementById('chkOil').checked) autoSettings.lastOil = parseFloat(odo); if(document.getElementById('chkGbo').checked) autoSettings.lastGbo = parseFloat(odo); if(document.getElementById('chkGrm').checked) autoSettings.lastGrm = parseFloat(odo); localStorage.setItem('autoSettings', JSON.stringify(autoSettings)); renderAutoStatus(); } document.getElementById('serviceOdo').value = ''; document.getElementById('serviceDesc').value = ''; document.getElementById('serviceSum').value = ''; document.getElementById('chkOil').checked = false; document.getElementById('chkGbo').checked = false; document.getElementById('chkGrm').checked = false; renderAutoLogs(); }; function renderAutoLogs() { const container = document.getElementById('autoLogsContainer'); container.innerHTML = ''; if (autoLogs.length === 0) { container.innerHTML = '<div style="color:#bbb;">Нет записей.</div>'; return; } autoLogs.forEach(log => { let title = ''; let details = ''; let sumText = log.sum ? `<strong>${log.sum} грн</strong>` : ''; let borderColor = '#a855f7'; if (log.type === 'refuel') { title = `⛽ Заправка`; let fInfo = []; if(log.gasL > 0) fInfo.push(`Газ: ${log.gasL}л (${log.consGas} л/100)`); if(log.petL > 0) fInfo.push(`Бенз: ${log.petL}л (${log.consPet} л/100)`); details = `Дистанция: ${log.km} км <br> <span style="color:#34d399;">${fInfo.join(' | ')}</span>`; borderColor = '#34d399'; } else if (log.type === 'service') { title = `🛠 ${log.desc}`; details = log.odo ? `Общий пробег: ${log.odo} км` : 'Пробег не указан'; borderColor = '#60a5fa'; } else { title = log.desc || 'Обслуживание'; details = (log.lit ? log.lit+' л | ' : '') + (log.km ? log.km+' км' : ''); } container.innerHTML += `<div class="auto-log-item" style="border-left-color: ${borderColor}"><div class="auto-log-info"><div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;"><p style="margin: 0; font-size: 15px; font-weight: 500;">${title}</p><span>${sumText}</span></div><span style="color: #bbb; font-size: 13px; display: block; margin-bottom: 3px;">${details}</span><span style="color: #888; font-size: 12px;">📅 ${log.date}</span></div><span class="material-symbols-outlined" style="color:#f87171; cursor:pointer; margin-left: 15px;" onclick="deleteAutoLog(${log.id})">delete</span></div>`; }); } window.deleteAutoLog = function(id) { autoLogs = autoLogs.filter(l => l.id !== id); localStorage.setItem('autoLogs', JSON.stringify(autoLogs)); renderAutoLogs(); };
+        let autoLogs = JSON.parse(localStorage.getItem('autoLogs')) || []; let autoSettings = JSON.parse(localStorage.getItem('autoSettings')) || { currentOdo: 0, lastOil: 0, lastGbo: 0, lastGrm: 0 }; function renderAutoStatus() { document.getElementById('globalOdo').value = autoSettings.currentOdo || ''; const alerts = document.getElementById('maintenanceAlerts'); alerts.innerHTML = ''; const odo = autoSettings.currentOdo || 0; if(odo === 0) { alerts.innerHTML = '<div style="color:#bbb; font-size:13px;">Введите пробег, чтобы включить напоминания.</div>'; return; } alerts.innerHTML += createBar('Масло (10 тыс. км)', 10000, odo - (autoSettings.lastOil || odo), autoSettings.lastOil); alerts.innerHTML += createBar('Фильтры ГБО (10 тыс. км)', 10000, odo - (autoSettings.lastGbo || odo), autoSettings.lastGbo); alerts.innerHTML += createBar('ГРМ (60 тыс. км)', 60000, odo - (autoSettings.lastGrm || odo), autoSettings.lastGrm); } function createBar(name, limit, currentDist, isSet) { if(!isSet) return `<div style="margin-bottom: 8px; font-size: 13px; color: #bbb;">${name}: <span>Счетчик не запущен</span></div>`; const left = limit - currentDist; let pct = (currentDist / limit) * 100; if (pct > 100) pct = 100; let color = '#34d399'; let text = `Осталось ${left} км`; if (left <= 1000) color = '#fbbf24'; if (left <= 0) { color = '#f87171'; text = 'Требуется замена!'; } return `<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;"><span>${name}</span><span style="color: ${color}; font-weight: bold;">${text}</span></div><div class="maintenance-bar"><div class="maintenance-fill" style="width: ${pct}%; background: ${color};"></div></div></div>`; } window.updateGlobalOdo = function() { autoSettings.currentOdo = parseFloat(document.getElementById('globalOdo').value) || 0; localStorage.setItem('autoSettings', JSON.stringify(autoSettings)); renderAutoStatus(); }; document.getElementById('gasDate').valueAsDate = new Date(); document.getElementById('serviceDate').valueAsDate = new Date(); window.calcGas = function() { const km = parseFloat(document.getElementById('gasTrip').value) || 0; const gasL = parseFloat(document.getElementById('gasLiters').value) || 0; const petL = parseFloat(document.getElementById('petrolLiters').value) || 0; const sum = parseFloat(document.getElementById('gasSum').value) || 0; const res = document.getElementById('fuelCalcResult'); let txt = ''; if (km > 0) { if(gasL > 0) txt += `Расход газа: <span style="color:#fff">${((gasL/km)*100).toFixed(1)} л/100км</span><br>`; if(petL > 0) txt += `Расход бенз: <span style="color:#fff">${((petL/km)*100).toFixed(1)} л/100км</span><br>`; if(sum > 0) txt += `Цена поездки: <span style="color:#fff">${(sum/km).toFixed(2)} грн / 1 км</span>`; } res.innerHTML = txt || 'Введите дистанцию и литры...'; }; window.addGasLog = function() { const date = document.getElementById('gasDate').value; const km = document.getElementById('gasTrip').value; const gasL = document.getElementById('gasLiters').value; const petL = document.getElementById('petrolLiters').value; const sum = document.getElementById('gasSum').value; if(!km || (!gasL && !petL)) return alert("Введите пройденные км и топливо!"); autoLogs.unshift({ id: Date.now(), type: 'refuel', date, km, gasL, petL, sum, consGas: gasL ? ((parseFloat(gasL) / parseFloat(km)) * 100).toFixed(1) : 0, consPet: petL ? ((parseFloat(petL) / parseFloat(km)) * 100).toFixed(1) : 0 }); localStorage.setItem('autoLogs', JSON.stringify(autoLogs)); document.getElementById('gasTrip').value = ''; document.getElementById('gasLiters').value = ''; document.getElementById('petrolLiters').value = ''; document.getElementById('gasSum').value = ''; calcGas(); renderAutoLogs(); }; window.addServiceLog = function() { const date = document.getElementById('serviceDate').value; const odo = document.getElementById('serviceOdo').value; const desc = document.getElementById('serviceDesc').value; const sum = document.getElementById('serviceSum').value; if(!desc) return alert("Введите описание работы!"); autoLogs.unshift({ id: Date.now(), type: 'service', date, odo, desc, sum }); localStorage.setItem('autoLogs', JSON.stringify(autoLogs)); if(odo) { autoSettings.currentOdo = parseFloat(odo); if(document.getElementById('chkOil').checked) autoSettings.lastOil = parseFloat(odo); if(document.getElementById('chkGbo').checked) autoSettings.lastGbo = parseFloat(odo); if(document.getElementById('chkGrm').checked) autoSettings.lastGrm = parseFloat(odo); localStorage.setItem('autoSettings', JSON.stringify(autoSettings)); renderAutoStatus(); } document.getElementById('serviceOdo').value = ''; document.getElementById('serviceDesc').value = ''; document.getElementById('serviceSum').value = ''; document.getElementById('chkOil').checked = false; document.getElementById('chkGbo').checked = false; document.getElementById('chkGrm').checked = false; renderAutoLogs(); }; function renderAutoLogs() { const container = document.getElementById('autoLogsContainer'); container.innerHTML = ''; if (autoLogs.length === 0) { container.innerHTML = '<div style="color:#bbb;">Нет записей.</div>'; return; } autoLogs.forEach(log => { let title = ''; let details = ''; let sumText = log.sum ? `<strong>${log.sum} грн</strong>` : ''; let borderColor = '#a855f7'; if (log.type === 'refuel') { title = `⛽ Заправка`; let fInfo = []; if(log.gasL > 0) fInfo.push(`Газ: ${log.gasL}л (${log.consGas} л/100)`); if(log.petL > 0) fInfo.push(`Бенз: ${log.petL}л (${log.consPet} л/100)`); details = `Дистанция: ${log.km} км <br> <span style="color:#34d399;">${fInfo.join(' | ')}</span>`; borderColor = '#34d399'; } else if (log.type === 'service') { title = `🛠 ${log.desc}`; details = log.odo ? `Общий пробег: ${log.odo} км` : 'Пробег не указан'; borderColor = '#60a5fa'; } container.innerHTML += `<div class="auto-log-item" style="border-left-color: ${borderColor}"><div class="auto-log-info"><div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;"><p style="margin: 0; font-size: 15px; font-weight: 500;">${title}</p><span>${sumText}</span></div><span style="color: #bbb; font-size: 13px; display: block; margin-bottom: 3px;">${details}</span><span style="color: #888; font-size: 12px;">📅 ${log.date}</span></div><span class="material-symbols-outlined" style="color:#f87171; cursor:pointer; margin-left: 15px;" onclick="deleteAutoLog(${log.id})">delete</span></div>`; }); } window.deleteAutoLog = function(id) { autoLogs = autoLogs.filter(l => l.id !== id); localStorage.setItem('autoLogs', JSON.stringify(autoLogs)); renderAutoLogs(); };
 
         // --- 8. ФИНАНСЫ И СТАТИСТИКА ---
         function initFinanceMonths() { const select = document.getElementById('financeMonthSelect'); select.innerHTML = ''; const mNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]; const d = new Date(); const y = d.getFullYear(); const m = d.getMonth(); for(let i = 1; i >= -12; i--) { let dt = new Date(y, m+i, 1); let val = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0'); let opt = document.createElement('option'); opt.value = val; opt.innerText = mNames[dt.getMonth()] + ' ' + dt.getFullYear(); if(i === 0) opt.selected = true; select.appendChild(opt); } } initFinanceMonths();
@@ -957,7 +724,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(registration => { console.log('SW зарегистрирован:', registration); })
+                    .then(registration => { console.log('SW зарегистрирован'); })
                     .catch(error => { console.log('Ошибка SW:', error); });
             });
         }
